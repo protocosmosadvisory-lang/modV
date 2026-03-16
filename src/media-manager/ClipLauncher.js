@@ -326,6 +326,62 @@ class ClipLauncher {
     });
   }
 
+  /**
+   * After a restart, blob URLs saved in localStorage are stale.
+   * For any placeholder slot whose source.path is an absolute disk path,
+   * reconstruct a file:// URL so the slot becomes immediately playable.
+   * Call once on app mount after the store is ready.
+   */
+  reloadStaleSlots() {
+    const state = store.state["clip-launcher"];
+    const decks = DECKS;
+
+    for (let d = 0, dLen = decks.length; d < dLen; d++) {
+      const deck = decks[d];
+      const deckSlots = state.decks[deck];
+
+      for (let row = 0, rLen = deckSlots.length; row < rLen; row++) {
+        const rowSlots = deckSlots[row];
+
+        for (let col = 0, cLen = rowSlots.length; col < cLen; col++) {
+          const slot = rowSlots[col];
+
+          if (!slot.source) {
+            continue;
+          }
+
+          // Skip if already playable
+          if (slot.source.url && !slot.source.url.startsWith("blob:")) {
+            continue;
+          }
+
+          const filePath = slot.source.path;
+
+          // Only works for absolute paths in Electron
+          if (
+            !filePath ||
+            (!filePath.startsWith("/") && !filePath.match(/^[a-zA-Z]:\\/))
+          ) {
+            continue;
+          }
+
+          const fileUrl = `file://${filePath}`;
+
+          store.commit("clip-launcher/LOAD_CLIP", {
+            deck,
+            row,
+            col,
+            source: {
+              ...slot.source,
+              url: fileUrl,
+            },
+            thumbnail: slot.thumbnail,
+          });
+        }
+      }
+    }
+  }
+
   on(eventName, listener) {
     if (!this.listeners[eventName]) {
       this.listeners[eventName] = [];

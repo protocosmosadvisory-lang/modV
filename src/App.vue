@@ -224,6 +224,7 @@ export default {
     window.addEventListener("keydown", this.globalKeydownListener);
     midiBindingService.startListening();
     deckMixer.start();
+    clipLauncher.reloadStaleSlots();
   },
 
   beforeDestroy() {
