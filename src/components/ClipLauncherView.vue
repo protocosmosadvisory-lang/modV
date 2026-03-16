@@ -205,6 +205,21 @@
         </button>
         <span>B {{ Math.round(crossfader * 100) }}%</span>
       </div>
+      <!-- Blend mode selector -->
+      <div class="blend-mode-btns">
+        <button
+          v-for="bm in blendModes"
+          :key="bm.value"
+          type="button"
+          class="blend-mode-btn"
+          :class="{ 'blend-mode-active': blendMode === bm.value }"
+          :title="bm.label"
+          @click="setBlendMode(bm.value)"
+        >
+          {{ bm.label }}
+        </button>
+      </div>
+
       <input
         class="crossfader"
         type="range"
@@ -395,6 +410,14 @@ export default {
       lfoInterval: null,
       masterSpeedA: 1.0,
       masterSpeedB: 1.0,
+      blendMode: "cross",
+      blendModes: [
+        { label: "×fade", value: "cross" },
+        { label: "add", value: "add" },
+        { label: "scr", value: "screen" },
+        { label: "mul", value: "multiply" },
+        { label: "ovr", value: "overlay" },
+      ],
       speedPresets: [
         { label: "¼", value: 0.25 },
         { label: "½", value: 0.5 },
@@ -784,6 +807,11 @@ export default {
         row: -1,
         col: -1,
       });
+    },
+
+    setBlendMode(mode) {
+      this.blendMode = mode;
+      deckMixer.setBlendMode(mode);
     },
 
     setMasterSpeed(deck, speed) {
@@ -1552,6 +1580,39 @@ export default {
     background: rgba(124, 58, 255, 0.16);
     box-shadow: 0 0 0 rgba(124, 58, 255, 0.1);
   }
+}
+
+/* Blend mode buttons */
+.blend-mode-btns {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+}
+
+.blend-mode-btn {
+  flex: 1;
+  padding: 3px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.blend-mode-btn:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.blend-mode-active {
+  border-color: var(--grackle-accent-2, #7c3aff);
+  color: #a78bff;
+  background: rgba(124, 58, 255, 0.12);
 }
 
 /* Row scene triggers */

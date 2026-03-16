@@ -15,9 +15,7 @@ import store from "../ui-store";
 const GALLERY_GROUP_NAME = "modV internal Gallery Group";
 const VIDEO_CLIP_MODULE_NAME = "VideoClip";
 
-// Blend mode used when compositing B over A.
-// "source-over" gives a clean linear alpha crossfade.
-const BLEND_MODE = "source-over";
+const BLEND_MODES = ["cross", "add", "screen", "multiply", "overlay"];
 
 class DeckMixer {
   constructor() {
@@ -25,11 +23,34 @@ class DeckMixer {
     this.playerB = new VideoClipPlayer();
     this._masterSpeedA = 1.0;
     this._masterSpeedB = 1.0;
+    this._opacityA = 1.0;
+    this._opacityB = 1.0;
+    this.blendMode = "cross"; // cross | add | screen | multiply | overlay
     this._canvas = null;
     this._ctx = null;
     this._stream = null;
     this._raf = null;
     this._active = false;
+  }
+
+  setBlendMode(mode) {
+    if (BLEND_MODES.includes(mode)) {
+      this.blendMode = mode;
+    }
+  }
+
+  setOpacity(deck, value) {
+    const clamped = Math.max(0, Math.min(1, Number(value) || 1));
+
+    if (deck === "A") {
+      this._opacityA = clamped;
+    } else {
+      this._opacityB = clamped;
+    }
+  }
+
+  getOpacity(deck) {
+    return deck === "A" ? this._opacityA : this._opacityB;
   }
 
   getMasterSpeed(deck) {
@@ -91,26 +112,53 @@ class DeckMixer {
     }
 
     const cf = store.state["clip-launcher"]?.crossfader ?? 0.5;
-    const alphaA = Math.max(0, Math.min(1, 1 - cf));
-    const alphaB = Math.max(0, Math.min(1, cf));
     const ctx = this._ctx;
     const w = this._canvas.width;
     const h = this._canvas.height;
+    const mode = this.blendMode;
 
     ctx.clearRect(0, 0, w, h);
 
-    // Draw deck A
-    if (this.playerA.canvas && this.playerA.isPlaying && alphaA > 0.001) {
-      ctx.globalAlpha = alphaA;
-      ctx.globalCompositeOperation = BLEND_MODE;
-      ctx.drawImage(this.playerA.canvas, 0, 0, w, h);
-    }
+    if (mode === "cross") {
+      // Standard alpha crossfade
+      const alphaA = Math.max(0, Math.min(1, (1 - cf) * this._opacityA));
+      const alphaB = Math.max(0, Math.min(1, cf * this._opacityB));
 
-    // Draw deck B on top with its alpha
-    if (this.playerB.canvas && this.playerB.isPlaying && alphaB > 0.001) {
-      ctx.globalAlpha = alphaB;
-      ctx.globalCompositeOperation = BLEND_MODE;
-      ctx.drawImage(this.playerB.canvas, 0, 0, w, h);
+      if (this.playerA.canvas && this.playerA.isPlaying && alphaA > 0.001) {
+        ctx.globalAlpha = alphaA;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(this.playerA.canvas, 0, 0, w, h);
+      }
+
+      if (this.playerB.canvas && this.playerB.isPlaying && alphaB > 0.001) {
+        ctx.globalAlpha = alphaB;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(this.playerB.canvas, 0, 0, w, h);
+      }
+    } else {
+      // Additive blend modes — both decks at full opacity, blended
+      const compositeOp =
+        mode === "add"
+          ? "lighter"
+          : mode === "screen"
+          ? "screen"
+          : mode === "multiply"
+          ? "multiply"
+          : "overlay";
+      const alphaA = Math.max(0, Math.min(1, (1 - cf) * this._opacityA));
+      const alphaB = Math.max(0, Math.min(1, cf * this._opacityB));
+
+      if (this.playerA.canvas && this.playerA.isPlaying) {
+        ctx.globalAlpha = alphaA;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.drawImage(this.playerA.canvas, 0, 0, w, h);
+      }
+
+      if (this.playerB.canvas && this.playerB.isPlaying) {
+        ctx.globalAlpha = alphaB;
+        ctx.globalCompositeOperation = compositeOp;
+        ctx.drawImage(this.playerB.canvas, 0, 0, w, h);
+      }
     }
 
     ctx.globalAlpha = 1;
