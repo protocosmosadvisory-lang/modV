@@ -269,6 +269,33 @@ export default {
       clipLauncher.triggerClip(this.getShortcutDeck(), row, col);
     },
 
+    triggerSceneRow(row) {
+      const decks = ["A", "B"];
+      const launcherState = this.$store.state["clip-launcher"];
+
+      for (let i = 0, len = decks.length; i < len; i++) {
+        const deck = decks[i];
+        const deckSlots = launcherState.decks[deck]?.[row];
+
+        if (!deckSlots) {
+          continue;
+        }
+
+        const firstLoaded = deckSlots.find(
+          (slot) => slot.source && slot.source.url
+        );
+
+        if (firstLoaded) {
+          const parts = firstLoaded.id.split("-");
+          clipLauncher.triggerClip(
+            deck,
+            parseInt(parts[1], 10),
+            parseInt(parts[2], 10)
+          );
+        }
+      }
+    },
+
     triggerTapTempoFallback() {
       if (typeof clipLauncher.tap === "function") {
         clipLauncher.tap();
@@ -326,6 +353,17 @@ export default {
       }
 
       const isEditableTarget = this.isEditableTarget(event.target);
+
+      // Shift+1-8: trigger scene row on both decks simultaneously
+      if (event.shiftKey && !isEditableTarget) {
+        const sceneRow = parseInt(event.key, 10);
+
+        if (sceneRow >= 1 && sceneRow <= 8) {
+          event.preventDefault();
+          this.triggerSceneRow(sceneRow - 1);
+          return;
+        }
+      }
 
       if (key === "escape") {
         this.exitAppFullscreen();

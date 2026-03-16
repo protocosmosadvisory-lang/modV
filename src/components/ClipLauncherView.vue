@@ -101,6 +101,15 @@
         </div>
         <button
           type="button"
+          class="deck-stop-btn"
+          :class="{ 'deck-stop-active': isDeckPlaying('A') }"
+          title="Stop Deck A"
+          @click="stopDeck('A')"
+        >
+          ■
+        </button>
+        <button
+          type="button"
           class="sync-toggle midi-toggle"
           :class="{ 'sync-toggle-active': midiLearnDeck === 'A' }"
           @click="toggleMidiLearnMode('A')"
@@ -250,6 +259,15 @@
             {{ s.label }}
           </button>
         </div>
+        <button
+          type="button"
+          class="deck-stop-btn"
+          :class="{ 'deck-stop-active': isDeckPlaying('B') }"
+          title="Stop Deck B"
+          @click="stopDeck('B')"
+        >
+          ■
+        </button>
         <button
           type="button"
           class="sync-toggle midi-toggle"
@@ -748,6 +766,24 @@ export default {
         clearInterval(this.lfoInterval);
         this.lfoInterval = null;
       }
+    },
+
+    isDeckPlaying(deck) {
+      const player = deck === "A" ? deckMixer.playerA : deckMixer.playerB;
+
+      return player.isPlaying;
+    },
+
+    stopDeck(deck) {
+      const player = deck === "A" ? deckMixer.playerA : deckMixer.playerB;
+      player.stop();
+
+      // Passing row/col of -1 sets all slots in this deck to active=false
+      this.$store.commit("clip-launcher/TRIGGER_CLIP", {
+        deck,
+        row: -1,
+        col: -1,
+      });
     },
 
     setMasterSpeed(deck, speed) {
@@ -1557,6 +1593,35 @@ export default {
   color: var(--grackle-accent, #00ff88);
   background: rgba(0, 255, 136, 0.1);
   box-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
+}
+
+/* Deck stop button */
+.deck-stop-btn {
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font-size: 0.55rem;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+  line-height: 1;
+}
+
+.deck-stop-btn:hover {
+  border-color: rgba(255, 80, 80, 0.5);
+  color: rgba(255, 100, 100, 0.8);
+  background: rgba(255, 60, 60, 0.08);
+}
+
+.deck-stop-btn:active {
+  transform: scale(0.9);
+}
+
+.deck-stop-active {
+  border-color: rgba(255, 80, 80, 0.6);
+  color: rgba(255, 100, 100, 0.9);
+  background: rgba(255, 60, 60, 0.1);
 }
 
 /* Per-deck master speed presets */
