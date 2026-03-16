@@ -125,6 +125,7 @@ import Search from "@/components/Search";
 import FrameRateDialog from "@/components/dialogs/FrameRateDialog";
 import ErrorWatcher from "@/components/ErrorWatcher";
 import Plugins from "@/components/Plugins";
+import clipLauncher from "@/media-manager/ClipLauncher";
 
 import getNextName from "@/application/utils/get-next-name";
 import constants from "@/application/constants";
@@ -211,9 +212,163 @@ export default {
 
   async mounted() {
     this.rightColumnWidth = window.innerWidth * 0.33;
+    this.globalKeydownListener = (event) => this.handleGlobalKeydown(event);
+    window.addEventListener("keydown", this.globalKeydownListener);
+  },
+
+  beforeDestroy() {
+    window.removeEventListener("keydown", this.globalKeydownListener);
   },
 
   methods: {
+    isEditableTarget(target) {
+      if (!target) {
+        return false;
+      }
+
+      const tagName = target.tagName;
+
+      return (
+        target.isContentEditable ||
+        tagName === "INPUT" ||
+        tagName === "TEXTAREA" ||
+        tagName === "SELECT" ||
+        tagName === "BUTTON"
+      );
+    },
+
+    getShortcutDeck() {
+      const decks = this.$store.state["clip-launcher"].decks;
+      const deckAActive = decks.A.some((row) =>
+        row.some((slot) => slot.active)
+      );
+      const deckBActive = decks.B.some((row) =>
+        row.some((slot) => slot.active)
+      );
+
+      if (deckBActive && !deckAActive) {
+        return "B";
+      }
+
+      return "A";
+    },
+
+    triggerShortcutClip(row, col) {
+      clipLauncher.triggerClip(this.getShortcutDeck(), row, col);
+    },
+
+    triggerTapTempoFallback() {
+      if (typeof clipLauncher.tap === "function") {
+        clipLauncher.tap();
+        return;
+      }
+
+      if (typeof clipLauncher.tapTempo === "function") {
+        clipLauncher.tapTempo();
+        return;
+      }
+
+      clipLauncher.emit("tap-tempo");
+    },
+
+    async requestAppFullscreen() {
+      const appElement = document.getElementById("app");
+
+      if (
+        !appElement ||
+        document.fullscreenElement ||
+        !appElement.requestFullscreen
+      ) {
+        return;
+      }
+
+      try {
+        await appElement.requestFullscreen();
+      } catch (error) {
+        // Ignore rejected fullscreen requests caused by platform/browser policy.
+      }
+    },
+
+    async exitAppFullscreen() {
+      if (!document.fullscreenElement || !document.exitFullscreen) {
+        return;
+      }
+
+      try {
+        await document.exitFullscreen();
+      } catch (error) {
+        // Ignore rejected exit requests caused by platform/browser policy.
+      }
+    },
+
+    handleGlobalKeydown(event) {
+      const key = event.key.toLowerCase();
+
+      if (
+        (event.defaultPrevented && key !== " ") ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
+        return;
+      }
+
+      const isEditableTarget = this.isEditableTarget(event.target);
+
+      if (key === "escape") {
+        this.exitAppFullscreen();
+        return;
+      }
+
+      if (isEditableTarget) {
+        return;
+      }
+
+      if (event.repeat && key !== " ") {
+        return;
+      }
+
+      const numberRowMap = {
+        1: 0,
+        2: 1,
+        3: 2,
+        4: 3,
+        5: 4,
+        6: 5,
+        7: 6,
+        8: 7,
+      };
+      const secondRowMap = {
+        q: 0,
+        w: 1,
+        e: 2,
+        r: 3,
+        t: 4,
+        y: 5,
+        u: 6,
+        i: 7,
+      };
+
+      if (Object.prototype.hasOwnProperty.call(numberRowMap, key)) {
+        this.triggerShortcutClip(0, numberRowMap[key]);
+        return;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(secondRowMap, key)) {
+        this.triggerShortcutClip(1, secondRowMap[key]);
+        return;
+      }
+
+      if (key === " ") {
+        this.triggerTapTempoFallback();
+        return;
+      }
+
+      if (key === "f") {
+        this.requestAppFullscreen();
+      }
+    },
+
     toggleModulePin(id) {
       if (this.isPinned(id)) {
         this.$store.commit("ui-modules/REMOVE_PINNED", id);

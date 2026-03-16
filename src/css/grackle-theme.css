@@ -1,0 +1,83 @@
+:root {
+  --background-color-rgb: 10, 10, 10;
+  --background-color: #0a0a0a;
+  --grackle-accent: #00ff88;
+  --grackle-accent-2: #7c3aff;
+  --fontSize: 13px;
+}
+
+html,
+body,
+#app {
+  background: #0a0a0a;
+}
+
+#app::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.03) 0,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.12;
+  mix-blend-mode: screen;
+  z-index: 1;
+}
+
+#app > * {
+  position: relative;
+  z-index: 2;
+}
+
+.lm_header {
+  background: #111 !important;
+}
+
+.lm_header + .lm_items .lm_header {
+  background: #111 !important;
+}
+
+.lm_header .lm_tab {
+  transition: background-color 120ms ease, color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.lm_header .lm_tab.lm_active {
+  background: var(--grackle-accent) !important;
+  color: #04120a !important;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.2),
+    0 0 14px rgba(0, 255, 136, 0.2);
+}
+
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  transition: background-color 120ms ease, color 120ms ease,
+    border-color 120ms ease, box-shadow 120ms ease;
+}
+
+button:hover,
+input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover {
+  border-color: var(--grackle-accent);
+  box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.3),
+    0 0 16px rgba(0, 255, 136, 0.12);
+}
+
+.status-bar {
+  border-top: 1px solid rgba(0, 255, 136, 0.22);
+  box-shadow: 0 -1px 0 rgba(0, 255, 136, 0.1),
+    0 0 24px rgba(0, 255, 136, 0.12);
+}
+
+.status-bar .tag {
+  box-shadow: inset 0 0 0 1px rgba(0, 255, 136, 0.08),
+    0 0 10px rgba(0, 255, 136, 0.08);
+}

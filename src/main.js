@@ -10,6 +10,7 @@ import "./components/directives/InfoView";
 import "./components/directives/Search";
 import "./components/directives/ValueTooltip";
 import "./components/directives/ContextMenu";
+import "./css/grackle-theme.css";
 
 import App from "./App.vue";
 import modV from "./application";
@@ -26,12 +27,12 @@ window.modV = modV;
 Object.defineProperty(Vue.prototype, "$modV", {
   get() {
     return modV;
-  }
+  },
 });
 
 window.Vue = new Vue({
-  render: h => h(App),
-  store
+  render: (h) => h(App),
+  store,
 });
 
 // For Playwright

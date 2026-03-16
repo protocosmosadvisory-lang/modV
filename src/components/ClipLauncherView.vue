@@ -33,6 +33,18 @@
     </section>
 
     <section class="crossfader-column">
+      <button
+        class="sync-toggle"
+        :class="{ 'sync-toggle-active': beatSyncMode === 'sync' }"
+        type="button"
+        @click="toggleBeatSync"
+      >
+        <span>SYNC</span>
+        <span
+          class="beat-indicator"
+          :class="{ 'beat-indicator-active': beatPulseActive }"
+        ></span>
+      </button>
       <div class="crossfader-labels">
         <span>A</span>
         <span>{{ crossfaderLabel }}</span>
@@ -105,7 +117,34 @@ export default {
       iVTitle: "Clip Launcher",
       iVBody:
         "Two 8x8 clip decks with per-slot loading, triggering, clearing, and a center crossfader for blending deck A and deck B.",
+      beatPulseActive: false,
+      beatPulseTimeout: null,
+      beatPollInterval: null,
+      beatSyncMode: clipLauncher.beatSyncMode,
+      lastKickState: false,
     };
+  },
+
+  mounted() {
+    this.lastKickState = Boolean(this.$modV?.store?.state?.beats?.kick);
+    this.beatPollInterval = setInterval(this.pollBeatState, 1000 / 60);
+    this.stopListeningForBeatSyncMode = clipLauncher.on(
+      "beat-sync-mode-changed",
+      (mode) => {
+        this.beatSyncMode = mode;
+      }
+    );
+  },
+
+  beforeDestroy() {
+    clearInterval(this.beatPollInterval);
+    this.beatPollInterval = null;
+    clearTimeout(this.beatPulseTimeout);
+    this.beatPulseTimeout = null;
+    if (this.stopListeningForBeatSyncMode) {
+      this.stopListeningForBeatSyncMode();
+      this.stopListeningForBeatSyncMode = null;
+    }
   },
 
   computed: {
@@ -167,6 +206,31 @@ export default {
 
     setCrossfader(value) {
       clipLauncher.setCrossfader(value);
+    },
+
+    toggleBeatSync() {
+      const mode = this.beatSyncMode === "sync" ? "free" : "sync";
+
+      this.beatSyncMode = clipLauncher.setBeatSyncMode(mode);
+    },
+
+    pulseBeatIndicator() {
+      this.beatPulseActive = true;
+      clearTimeout(this.beatPulseTimeout);
+      this.beatPulseTimeout = setTimeout(() => {
+        this.beatPulseActive = false;
+        this.beatPulseTimeout = null;
+      }, 120);
+    },
+
+    pollBeatState() {
+      const kick = Boolean(this.$modV?.store?.state?.beats?.kick);
+
+      if (kick && !this.lastKickState) {
+        this.pulseBeatIndicator();
+      }
+
+      this.lastKickState = kick;
     },
 
     dropFile(deck, slot, event) {
@@ -275,6 +339,44 @@ export default {
   justify-content: center;
   gap: 10px;
   min-width: 0;
+}
+
+.sync-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(36, 39, 47, 0.92);
+  color: var(--foreground-color-1);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 8px 10px;
+  transition: border-color 120ms ease, box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.sync-toggle-active {
+  border-color: var(--accent-color, #5dff93);
+  box-shadow: 0 0 16px rgba(93, 255, 147, 0.2);
+  background: rgba(31, 122, 56, 0.28);
+}
+
+.beat-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.24);
+  transform: scale(1);
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.beat-indicator-active {
+  background: var(--accent-color, #5dff93);
+  box-shadow: 0 0 12px rgba(93, 255, 147, 0.75);
+  transform: scale(1.7);
 }
 
 .crossfader-labels {

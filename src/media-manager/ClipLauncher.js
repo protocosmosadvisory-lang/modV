@@ -1,4 +1,6 @@
 import store from "../ui-store";
+import videoClipPlayer from "../application/VideoClipPlayer";
+import BeatSync from "../application/BeatSync";
 
 const DECKS = ["A", "B"];
 const SUPPORTED_EXTENSIONS = [".mp4", ".mov", ".webm"];
@@ -52,6 +54,7 @@ class ClipLauncher {
   listeners = {};
   // Per-slot load tokens to prevent stale thumbnail writes from async races
   _loadTokens = {};
+  beatSyncMode = "free";
 
   _slotKey(deck, row, col) {
     return `${deck}-${row}-${col}`;
@@ -119,7 +122,7 @@ class ClipLauncher {
     return slot;
   }
 
-  triggerClip(deck, row, col) {
+  _triggerClipNow(deck, row, col) {
     const normalizedDeck = normalizeDeck(deck);
     const slot = this.getSlot(normalizedDeck, row, col);
 
@@ -133,6 +136,12 @@ class ClipLauncher {
       col,
     });
 
+    // Route the video source through modV's render pipeline
+    videoClipPlayer.play(slot.source, {
+      loopMode: slot.loopMode || "loop",
+      speed: slot.speed || 1.0,
+    });
+
     const activeSlot = this.getSlot(normalizedDeck, row, col);
     this.emit("clip-triggered", {
       deck: normalizedDeck,
@@ -142,6 +151,23 @@ class ClipLauncher {
     });
 
     return activeSlot;
+  }
+
+  triggerClip(deck, row, col) {
+    const normalizedDeck = normalizeDeck(deck);
+    const slot = this.getSlot(normalizedDeck, row, col);
+
+    if (!slot.source) {
+      return this.beatSyncMode === "sync" ? Promise.resolve(null) : null;
+    }
+
+    if (this.beatSyncMode === "sync") {
+      return BeatSync.queueTrigger(normalizedDeck, row, col).then(() =>
+        this._triggerClipNow(normalizedDeck, row, col)
+      );
+    }
+
+    return this._triggerClipNow(normalizedDeck, row, col);
   }
 
   clearSlot(deck, row, col) {
@@ -167,6 +193,17 @@ class ClipLauncher {
     this.emit("deck-crossfade", this.state.crossfader);
 
     return this.state.crossfader;
+  }
+
+  setBeatSyncMode(mode) {
+    if (mode !== "free" && mode !== "sync") {
+      throw new Error(`Invalid beat sync mode "${mode}"`);
+    }
+
+    this.beatSyncMode = mode;
+    this.emit("beat-sync-mode-changed", this.beatSyncMode);
+
+    return this.beatSyncMode;
   }
 
   isSupportedFile(file) {
