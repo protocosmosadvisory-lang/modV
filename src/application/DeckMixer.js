@@ -31,6 +31,7 @@ class DeckMixer {
     this._canvas = null;
     this._ctx = null;
     this._stream = null;
+    this._track = null;
     this._raf = null;
     this._active = false;
 
@@ -161,6 +162,7 @@ class DeckMixer {
     const stream = this._canvas.captureStream(60);
     this._stream = stream;
     const [track] = stream.getVideoTracks();
+    this._track = track || null;
 
     if (track && this.modV) {
       this.modV._imageCapture = new ImageCapture(track);
@@ -177,6 +179,12 @@ class DeckMixer {
   _loop() {
     if (!this._active) {
       return;
+    }
+
+    // Re-attach imageCapture if modV is now available but wasn't at start()
+    if (this._track && this.modV && !this.modV._imageCapture) {
+      this.modV._imageCapture = new ImageCapture(this._track);
+      this._ensureVideoClipModule();
     }
 
     const cf = store.state["clip-launcher"]?.crossfader ?? 0.5;
@@ -293,6 +301,7 @@ class DeckMixer {
 
     this._canvas = null;
     this._ctx = null;
+    this._track = null;
 
     if (this.modV) {
       this.modV._imageCapture = null;
