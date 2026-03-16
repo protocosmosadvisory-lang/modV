@@ -3,7 +3,7 @@ const DefinePlugin = require("webpack").DefinePlugin;
 const publishingOptions = {
   provider: "github",
   releaseType: "prerelease",
-  vPrefixedTagName: false
+  vPrefixedTagName: false,
 };
 
 module.exports = {
@@ -13,17 +13,7 @@ module.exports = {
   pages: {
     index: "src/main.js",
     colorPicker: "src/subpages/color-picker/main.js",
-    splashScreen: "src/subpages/splash-screen/main.js"
-  },
-
-  chainWebpack: config => {
-    config.module
-      .rule("vue")
-      .use("vue-loader")
-      .tap(options => {
-        options.compiler = require("vue-template-babel-compiler");
-        return options;
-      });
+    splashScreen: "src/subpages/splash-screen/main.js",
   },
 
   configureWebpack: {
@@ -31,22 +21,22 @@ module.exports = {
       rules: [
         {
           test: /\.(glsl|vert|frag|fs|vs)$/,
-          loader: "text-loader"
-        }
-      ]
+          loader: "text-loader",
+        },
+      ],
     },
 
     devServer: {
       hot: true,
       client: {
-        overlay: false
-      }
+        overlay: false,
+      },
     },
 
     node: {
       __dirname: process.env.NODE_ENV !== "production",
-      __filename: process.env.NODE_ENV !== "production"
-    }
+      __filename: process.env.NODE_ENV !== "production",
+    },
   },
 
   pluginOptions: {
@@ -70,7 +60,7 @@ module.exports = {
         "grandiose",
         "npm",
         "webpack-3",
-        "font-list"
+        "font-list",
       ],
 
       builderOptions: {
@@ -79,7 +69,7 @@ module.exports = {
 
         linux: {
           category: "Graphics",
-          target: ["AppImage"]
+          target: ["AppImage"],
         },
 
         // See https://www.electron.build/configuration/mac
@@ -95,29 +85,29 @@ module.exports = {
             NSCameraUsageDescription:
               "This app requires camera access to record video.",
             NSMicrophoneUsageDescription:
-              "This app requires microphone access to record audio."
+              "This app requires microphone access to record audio.",
           },
           target: {
             target: "default",
-            arch: "universal"
+            arch: "universal",
           },
-          singleArchFiles: "node_modules/grandiose/**"
+          singleArchFiles: "node_modules/grandiose/**",
         },
 
         dmg: {
-          sign: false
+          sign: false,
         },
 
         afterSign: "notarize.js",
 
         win: {
-          icon: "build/icon.ico"
+          icon: "build/icon.ico",
         },
 
-        publish: publishingOptions
+        publish: publishingOptions,
       },
 
-      chainWebpackMainProcess: config => {
+      chainWebpackMainProcess: (config) => {
         config.module
           .rule("nodeloader")
           .test(/\.node$/)
@@ -135,23 +125,23 @@ module.exports = {
           .end()
           .use("babelloader")
           .loader("babel-loader", {
-            presets: [["@babel/preset-env", { targets: "defaults" }]]
+            presets: [["@babel/preset-env", { targets: "defaults" }]],
           });
       },
 
-      chainWebpackRendererProcess: config => {
+      chainWebpackRendererProcess: (config) => {
         config.plugin("define").use(DefinePlugin, [
           {
             "process.env": {
               NODE_ENV: '"production"',
               BASE_URL: "`app://./`",
-              IS_ELECTRON: true
-            }
-          }
+              IS_ELECTRON: true,
+            },
+          },
         ]);
 
         return config;
-      }
-    }
-  }
+      },
+    },
+  },
 };
