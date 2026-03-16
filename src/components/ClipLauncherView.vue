@@ -77,7 +77,14 @@
       </div>
     </div>
 
-    <section class="deck-column">
+    <section
+      class="deck-column"
+      :class="{ 'folder-drag-over': folderDragOver === 'A' }"
+      @dragenter.prevent="folderDragOver = 'A'"
+      @dragleave="onDeckDragLeave('A', $event)"
+      @dragover.prevent
+      @drop.prevent="dropFolderOnDeck('A', $event)"
+    >
       <header class="deck-header">
         <span class="deck-title">Deck A</span>
         <button
@@ -177,7 +184,14 @@
       </div>
     </section>
 
-    <section class="deck-column">
+    <section
+      class="deck-column"
+      :class="{ 'folder-drag-over': folderDragOver === 'B' }"
+      @dragenter.prevent="folderDragOver = 'B'"
+      @dragleave="onDeckDragLeave('B', $event)"
+      @dragover.prevent
+      @drop.prevent="dropFolderOnDeck('B', $event)"
+    >
       <header class="deck-header">
         <span class="deck-title">Deck B</span>
         <button
@@ -297,6 +311,7 @@ export default {
       },
       midiLearnDeck: null,
       pendingMidiSlot: null,
+      folderDragOver: null,
       lfoActive: false,
       lfoRate: 0.5,
       lfoPhase: 0,
@@ -658,14 +673,82 @@ export default {
     },
 
     dropFile(deck, slot, event) {
-      const [file] = event.dataTransfer.files || [];
+      const files = event.dataTransfer.files || [];
+      const videoFiles = [];
 
-      if (!file || !clipLauncher.isSupportedFile(file)) {
+      for (let i = 0; i < files.length; i++) {
+        if (clipLauncher.isSupportedFile(files[i])) {
+          videoFiles.push(files[i]);
+        }
+      }
+
+      if (videoFiles.length === 0) {
         return;
       }
 
-      const { row, col } = parseSlotId(slot.id);
-      clipLauncher.loadClip(deck, row, col, file);
+      if (videoFiles.length === 1) {
+        const { row, col } = parseSlotId(slot.id);
+        clipLauncher.loadClip(deck, row, col, videoFiles[0]);
+        return;
+      }
+
+      // Multiple files dropped onto a slot — fill from this slot forward
+      const { row: startRow, col: startCol } = parseSlotId(slot.id);
+      let slotIndex = startRow * 8 + startCol;
+
+      for (
+        let i = 0;
+        i < videoFiles.length && slotIndex < 64;
+        i++, slotIndex++
+      ) {
+        const r = Math.floor(slotIndex / 8);
+        const c = slotIndex % 8;
+        clipLauncher.loadClip(deck, r, c, videoFiles[i]);
+      }
+    },
+
+    onDeckDragLeave(deck, event) {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        if (this.folderDragOver === deck) {
+          this.folderDragOver = null;
+        }
+      }
+    },
+
+    dropFolderOnDeck(deck, event) {
+      this.folderDragOver = null;
+      const items = event.dataTransfer.items || [];
+      const videoFiles = [];
+
+      // Collect all files from the drop (including from folders via getAsFile)
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        if (item.kind !== "file") {
+          continue;
+        }
+
+        const file = item.getAsFile();
+
+        if (file && clipLauncher.isSupportedFile(file)) {
+          videoFiles.push(file);
+        }
+      }
+
+      if (videoFiles.length === 0) {
+        return;
+      }
+
+      // Sort by name for consistent ordering
+      videoFiles.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true })
+      );
+
+      for (let i = 0; i < videoFiles.length && i < 64; i++) {
+        const r = Math.floor(i / 8);
+        const c = i % 8;
+        clipLauncher.loadClip(deck, r, c, videoFiles[i]);
+      }
     },
 
     openPopover(deck, slot, event) {
@@ -842,6 +925,13 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  border-radius: 8px;
+  transition: box-shadow 120ms ease;
+}
+
+.deck-column.folder-drag-over {
+  box-shadow: inset 0 0 0 2px var(--accent-color, #00ff88),
+    0 0 20px rgba(0, 255, 136, 0.15);
 }
 
 .deck-header {
