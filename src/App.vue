@@ -195,7 +195,7 @@ export default {
   created() {
     // Bump this version string whenever new panels are added to the default layout.
     // Any stored layout from a prior version is discarded so new panels appear.
-    const LAYOUT_VERSION = "grackle-1.0";
+    const LAYOUT_VERSION = "grackle-1.1";
     const storedVersion = window.localStorage.getItem("grackle-layout-version");
     if (storedVersion !== LAYOUT_VERSION) {
       window.localStorage.removeItem(constants.LAYOUT_STATE_KEY);

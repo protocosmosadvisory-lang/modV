@@ -150,6 +150,22 @@
       </button>
       <div class="crossfader-labels">
         <span>A {{ Math.round((1 - crossfader) * 100) }}%</span>
+        <button
+          type="button"
+          class="cf-midi-btn"
+          :class="{
+            'cf-midi-active': hasCrossfaderBinding,
+            'cf-midi-learning': crossfaderLearning,
+          }"
+          :title="
+            hasCrossfaderBinding
+              ? 'Click to clear crossfader MIDI'
+              : 'Click to map MIDI CC to crossfader'
+          "
+          @click="toggleCrossfaderMidi"
+        >
+          {{ crossfaderLearning ? "…" : "CC" }}
+        </button>
         <span>B {{ Math.round(crossfader * 100) }}%</span>
       </div>
       <input
@@ -312,6 +328,7 @@ export default {
       midiLearnDeck: null,
       pendingMidiSlot: null,
       folderDragOver: null,
+      crossfaderLearning: false,
       lfoActive: false,
       lfoRate: 0.5,
       lfoPhase: 0,
@@ -379,6 +396,10 @@ export default {
 
     lfoRateLabel() {
       return `${this.lfoRate.toFixed(1)}Hz`;
+    },
+
+    hasCrossfaderBinding() {
+      return Boolean(midiBindingService.crossfaderBinding);
     },
   },
 
@@ -610,6 +631,35 @@ export default {
 
     setCrossfader(value) {
       clipLauncher.setCrossfader(value);
+    },
+
+    async toggleCrossfaderMidi() {
+      if (this.hasCrossfaderBinding) {
+        midiBindingService.clearCrossfaderCCBinding();
+        return;
+      }
+
+      if (this.crossfaderLearning) {
+        return;
+      }
+
+      this.crossfaderLearning = true;
+
+      try {
+        const msg = await midiBindingService.startCrossfaderLearn();
+
+        if (msg) {
+          midiBindingService.setCrossfaderCCBinding({
+            deviceId: msg.deviceId,
+            channel: msg.channel,
+            cc: msg.note,
+          });
+        }
+      } catch (_e) {
+        // cancelled — no-op
+      } finally {
+        this.crossfaderLearning = false;
+      }
     },
 
     toggleLfo() {
@@ -1277,6 +1327,40 @@ export default {
   gap: 6px;
   color: var(--foreground-color-1);
   font-size: 0.75rem;
+}
+
+.cf-midi-btn {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: background 100ms ease, border-color 100ms ease;
+}
+
+.cf-midi-active {
+  border-color: #7c3aff;
+  color: #a78bff;
+  background: rgba(124, 58, 255, 0.15);
+}
+
+.cf-midi-learning {
+  border-color: rgba(124, 58, 255, 0.6);
+  animation: midi-learn-pulse 700ms ease-in-out infinite;
+}
+
+@keyframes midi-learn-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .crossfader {

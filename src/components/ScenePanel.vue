@@ -20,7 +20,6 @@
           v-if="editingSceneId !== scene.id"
           type="button"
           class="scene-button"
-          @click="handleSceneClick(scene)"
           @dblclick.stop="startEditing(scene)"
           @mousedown="startLongPress(scene, $event)"
           @mouseup="endLongPress(scene)"
@@ -28,6 +27,8 @@
           @touchstart.prevent="startLongPress(scene, $event)"
           @touchend.prevent="endLongPress(scene)"
           @touchcancel.prevent="cancelLongPress"
+          @keydown.enter.prevent="loadScene(scene)"
+          @keydown.space.prevent="loadScene(scene)"
         >
           <span class="scene-name">{{ scene.name }}</span>
         </button>
@@ -193,14 +194,6 @@ export default {
 
       clipLauncher.setCrossfader(scene.crossfader);
       this.$store.commit("clip-launcher-scenes/SET_ACTIVE_SCENE", scene.id);
-    },
-
-    handleSceneClick(scene) {
-      if (this.longPress.triggered) {
-        return;
-      }
-
-      this.loadScene(scene);
     },
 
     startLongPress(scene) {

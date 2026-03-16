@@ -5,6 +5,19 @@ const POLL_MS = 100;
 const NOTE_ON_STATUS_MIN = 144;
 const NOTE_ON_STATUS_MAX = 159;
 
+// CC crossfader: stores { deviceId, channel, cc } when bound
+let crossfaderCCBinding = null;
+
+try {
+  const saved = window.localStorage.getItem("grackle-midi-cf-binding");
+
+  if (saved) {
+    crossfaderCCBinding = JSON.parse(saved);
+  }
+} catch (_e) {
+  // ignore
+}
+
 function createBindingKey(deviceId, channel, note) {
   return `${deviceId}:${channel}:${note}`;
 }
@@ -55,6 +68,42 @@ class MidiBindingService {
     this.learnMode = false;
   }
 
+  startCrossfaderLearn() {
+    return new Promise((resolve, reject) => {
+      this.cancelLearn();
+      this.learnMode = true;
+      this.learnRequest = {
+        resolve: (msg) => {
+          resolve(msg);
+        },
+        reject,
+        type: "cc",
+      };
+    });
+  }
+
+  setCrossfaderCCBinding(binding) {
+    crossfaderCCBinding = binding;
+
+    try {
+      window.localStorage.setItem(
+        "grackle-midi-cf-binding",
+        JSON.stringify(binding)
+      );
+    } catch (_e) {
+      // ignore
+    }
+  }
+
+  clearCrossfaderCCBinding() {
+    crossfaderCCBinding = null;
+    window.localStorage.removeItem("grackle-midi-cf-binding");
+  }
+
+  get crossfaderBinding() {
+    return crossfaderCCBinding;
+  }
+
   pollDevices() {
     const devices = window.modV?.store?.state?.midi?.devices || {};
     const activeNotes = {};
@@ -67,6 +116,9 @@ class MidiBindingService {
       if (!device?.listenForInput) {
         continue;
       }
+
+      // CC crossfader routing
+      this.processCCCrossfader(deviceId, device.channelData || {});
 
       const messages = this.getNoteOnMessages(
         deviceId,
@@ -107,6 +159,42 @@ class MidiBindingService {
     }
 
     this.lastActiveNotes = activeNotes;
+  }
+
+  processCCCrossfader(deviceId, channelData) {
+    if (!crossfaderCCBinding) {
+      return;
+    }
+
+    if (
+      crossfaderCCBinding.deviceId !== deviceId &&
+      crossfaderCCBinding.deviceId !== "*"
+    ) {
+      return;
+    }
+
+    const channelEntry = channelData[String(crossfaderCCBinding.channel)];
+
+    if (!channelEntry) {
+      return;
+    }
+
+    let ccValue = null;
+
+    if (
+      Array.isArray(channelEntry.cc) &&
+      Number(channelEntry.cc[0]) === crossfaderCCBinding.cc
+    ) {
+      ccValue = Number(channelEntry.cc[1]);
+    } else if (typeof channelEntry[crossfaderCCBinding.cc] !== "undefined") {
+      ccValue = Number(channelEntry[crossfaderCCBinding.cc]);
+    }
+
+    if (ccValue !== null && isFinite(ccValue)) {
+      const normalized = Math.max(0, Math.min(1, ccValue / 127));
+
+      clipLauncher.setCrossfader(normalized);
+    }
   }
 
   getNoteOnMessages(deviceId, channelData) {
