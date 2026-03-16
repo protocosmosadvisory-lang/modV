@@ -64,8 +64,8 @@ module.exports = {
       ],
 
       builderOptions: {
-        appId: "gl.vcync.modv",
-        productName: "modV",
+        appId: "com.protocosmos.grackle",
+        productName: "Grackle",
 
         linux: {
           category: "Graphics",

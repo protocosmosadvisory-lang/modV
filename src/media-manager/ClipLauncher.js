@@ -1,7 +1,9 @@
 import store from "../ui-store";
 
 const DECKS = ["A", "B"];
-const SUPPORTED_EXTENSIONS = [".mp4", ".mov"];
+const SUPPORTED_EXTENSIONS = [".mp4", ".mov", ".webm"];
+const THUMBNAIL_WIDTH = 160;
+const THUMBNAIL_HEIGHT = 90;
 
 function normalizeDeck(deck) {
   const normalizedDeck = String(deck).toUpperCase();
@@ -48,6 +50,12 @@ function normalizeSource(source) {
 
 class ClipLauncher {
   listeners = {};
+  // Per-slot load tokens to prevent stale thumbnail writes from async races
+  _loadTokens = {};
+
+  _slotKey(deck, row, col) {
+    return `${deck}-${row}-${col}`;
+  }
 
   get state() {
     return store.state["clip-launcher"];
@@ -70,18 +78,45 @@ class ClipLauncher {
     return slot;
   }
 
-  loadClip(deck, row, col, source) {
+  async loadClip(deck, row, col, source) {
     const normalizedDeck = normalizeDeck(deck);
     const normalizedSource = normalizeSource(source);
+    const slotKey = this._slotKey(normalizedDeck, row, col);
+    const token = (this._loadTokens[slotKey] =
+      (this._loadTokens[slotKey] || 0) + 1);
+    let thumbnail = null;
+
+    if (
+      typeof File !== "undefined" &&
+      source instanceof File &&
+      this.isSupportedFile(source)
+    ) {
+      thumbnail = await this.generateThumbnail(source);
+    }
+
+    // Abort if a newer load started while we were generating the thumbnail
+    if (this._loadTokens[slotKey] !== token) {
+      return null;
+    }
 
     store.commit("clip-launcher/LOAD_CLIP", {
       deck: normalizedDeck,
       row,
       col,
       source: normalizedSource,
+      thumbnail,
     });
 
-    return this.getSlot(normalizedDeck, row, col);
+    const slot = this.getSlot(normalizedDeck, row, col);
+
+    this.emit("clip-loaded", {
+      deck: normalizedDeck,
+      row,
+      col,
+      slot,
+    });
+
+    return slot;
   }
 
   triggerClip(deck, row, col) {
@@ -136,8 +171,97 @@ class ClipLauncher {
 
   isSupportedFile(file) {
     const name = file?.name?.toLowerCase() || "";
+    const hasValidExtension = SUPPORTED_EXTENSIONS.some((ext) =>
+      name.endsWith(ext)
+    );
+    // Also check MIME type when available to prevent extension-spoofing
+    const mime = file?.type || "";
+    const hasValidMime = !mime || mime.startsWith("video/");
 
-    return SUPPORTED_EXTENSIONS.some((extension) => name.endsWith(extension));
+    return hasValidExtension && hasValidMime;
+  }
+
+  generateThumbnail(file) {
+    return new Promise((resolve) => {
+      if (
+        typeof document === "undefined" ||
+        typeof URL === "undefined" ||
+        typeof URL.createObjectURL !== "function" ||
+        typeof URL.revokeObjectURL !== "function"
+      ) {
+        resolve(null);
+        return;
+      }
+
+      const objectURL = URL.createObjectURL(file);
+      const video = document.createElement("video");
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        URL.revokeObjectURL(objectURL);
+        resolve(null);
+        return;
+      }
+
+      canvas.width = THUMBNAIL_WIDTH;
+      canvas.height = THUMBNAIL_HEIGHT;
+      video.preload = "metadata";
+      video.muted = true;
+      video.playsInline = true;
+      video.style.display = "none";
+      video.src = objectURL;
+
+      let settled = false;
+
+      const finalize = (thumbnail = null) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+        URL.revokeObjectURL(objectURL);
+        resolve(thumbnail);
+      };
+
+      video.addEventListener("error", () => finalize(null), { once: true });
+
+      video.addEventListener(
+        "loadedmetadata",
+        () => {
+          if (!Number.isFinite(video.duration) || video.duration <= 0) {
+            finalize(null);
+            return;
+          }
+
+          const targetTime = Math.max(
+            0,
+            Math.min(0.5, video.duration * 0.1, video.duration - 0.01)
+          );
+
+          if (targetTime === 0) {
+            context.drawImage(video, 0, 0, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+            finalize(canvas.toDataURL("image/jpeg", 0.5));
+            return;
+          }
+
+          video.currentTime = targetTime;
+        },
+        { once: true }
+      );
+
+      video.addEventListener(
+        "seeked",
+        () => {
+          context.drawImage(video, 0, 0, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+          finalize(canvas.toDataURL("image/jpeg", 0.5));
+        },
+        { once: true }
+      );
+    });
   }
 
   on(eventName, listener) {

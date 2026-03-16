@@ -15,7 +15,7 @@ async function save(filePath) {
   if (!filePath) {
     result = await dialog.showSaveDialog(windows["mainWindow"], {
       defaultPath: lastFileSavedPath || "preset.json",
-      filters: [{ name: "Presets", extensions: ["json"] }]
+      filters: [{ name: "Presets", extensions: ["json"] }],
     });
 
     if (result.canceled) {
@@ -44,7 +44,7 @@ async function writePresetToFile(filePath) {
       dialog.showMessageBox(windows["mainWindow"], {
         type: "error",
         message: "Could not save preset to file",
-        detail: e.toString()
+        detail: e.toString(),
       });
     }
   });
@@ -55,7 +55,7 @@ async function writePresetToFile(filePath) {
     dialog.showMessageBox(windows["mainWindow"], {
       type: "error",
       message: "Could not generate preset",
-      detail: e.toString()
+      detail: e.toString(),
     });
   }
 }
@@ -78,9 +78,9 @@ export function generateMenuTemplate() {
               { role: "hideothers" },
               { role: "unhide" },
               { type: "separator" },
-              { role: "quit" }
-            ]
-          }
+              { role: "quit" },
+            ],
+          },
         ]
       : []),
     // { role: 'fileMenu' }
@@ -94,10 +94,10 @@ export function generateMenuTemplate() {
             const result = await dialog.showOpenDialog(windows["mainWindow"], {
               filters: [
                 { name: "Presets", extensions: ["json"] },
-                { name: "All Files", extensions: ["*"] }
+                { name: "All Files", extensions: ["*"] },
               ],
               properties: ["openFile"],
-              multiSelections: false
+              multiSelections: false,
             });
 
             if (!result.canceled) {
@@ -107,7 +107,7 @@ export function generateMenuTemplate() {
               windows["mainWindow"].setDocumentEdited(false);
               windows["mainWindow"].setTitle(path.basename(filePath));
             }
-          }
+          },
         },
         ...(isMac
           ? [
@@ -117,10 +117,10 @@ export function generateMenuTemplate() {
                 submenu: [
                   {
                     label: "Clear Recent",
-                    role: "clearrecentdocuments"
-                  }
-                ]
-              }
+                    role: "clearrecentdocuments",
+                  },
+                ],
+              },
             ]
           : []),
         { type: "separator" },
@@ -129,14 +129,14 @@ export function generateMenuTemplate() {
           accelerator: "CmdOrCtrl+S",
           async click() {
             save(lastFileSavedPath);
-          }
+          },
         },
         {
           label: "Save Preset As…",
           accelerator: "CmdOrCtrl+Shift+S",
           async click() {
             save();
-          }
+          },
         },
 
         { type: "separator" },
@@ -152,11 +152,11 @@ export function generateMenuTemplate() {
                 console.error(failed);
               }
             }
-          }
+          },
         },
         { type: "separator" },
-        isMac ? { role: "close" } : { role: "quit" }
-      ]
+        isMac ? { role: "close" } : { role: "quit" },
+      ],
     },
     // { role: 'editMenu' }
     {
@@ -176,23 +176,23 @@ export function generateMenuTemplate() {
               { type: "separator" },
               {
                 label: "Speech",
-                submenu: [{ role: "startspeaking" }, { role: "stopspeaking" }]
-              }
+                submenu: [{ role: "startspeaking" }, { role: "stopspeaking" }],
+              },
             ]
-          : [{ role: "delete" }, { type: "separator" }, { role: "selectAll" }])
-      ]
+          : [{ role: "delete" }, { type: "separator" }, { role: "selectAll" }]),
+      ],
     },
     // { role: 'projectMenu' }
     {
       label: "Project",
       submenu: [
-        ...projectNames.map(name => ({
+        ...projectNames.map((name) => ({
           label: name,
           type: "checkbox",
           checked: currentProject === name,
-          click: () => setCurrentProject(name)
-        }))
-      ]
+          click: () => setCurrentProject(name),
+        })),
+      ],
     },
     // { role: 'viewMenu' }
     {
@@ -202,7 +202,7 @@ export function generateMenuTemplate() {
           label: "New Output Window",
           click: () => {
             windows["mainWindow"].webContents.send("create-output-window");
-          }
+          },
         },
         { type: "separator" },
         { role: "reload" },
@@ -223,17 +223,17 @@ export function generateMenuTemplate() {
               {
                 type: "question",
                 buttons: ["Yes", "No"],
-                message: "modV",
-                detail: "Are you sure you want to reset the current layout?"
+                message: "Grackle",
+                detail: "Are you sure you want to reset the current layout?",
               }
             );
 
             if (response === 0) {
               windows["mainWindow"].webContents.send("reset-layout");
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     // { role: 'windowMenu' }
     {
@@ -246,30 +246,30 @@ export function generateMenuTemplate() {
               { type: "separator" },
               { role: "front" },
               { type: "separator" },
-              { role: "window" }
+              { role: "window" },
             ]
-          : [{ role: "close" }])
-      ]
+          : [{ role: "close" }]),
+      ],
     },
     {
       role: "help",
       submenu: [
         {
-          label: "Learn modV",
+          label: "Learn Grackle",
           click() {
             const { shell } = require("electron");
             shell.openExternal("https://modv.js.org");
-          }
+          },
         },
         {
           label: "Search or ask a question",
           click() {
             const { shell } = require("electron");
             shell.openExternal("https://github.com/vcync/modV/discussions");
-          }
-        }
-      ]
-    }
+          },
+        },
+      ],
+    },
   ];
 }
 

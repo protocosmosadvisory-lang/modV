@@ -17,6 +17,7 @@
           type="button"
           class="clip-slot"
           :class="{ active: slot.active, loaded: Boolean(slot.source) }"
+          :style="slotStyle(slot)"
           @click="triggerSlot('A', slot)"
           @contextmenu.prevent="clearSlot('A', slot)"
           @dragenter.prevent
@@ -24,7 +25,9 @@
           @drop.prevent="dropFile('A', slot, $event)"
         >
           <span class="slot-index">{{ slotAddress(slot.id) }}</span>
-          <span class="slot-name">{{ slotLabel(slot) }}</span>
+          <span class="slot-name" :class="{ overlay: Boolean(slot.thumbnail) }">
+            {{ slotLabel(slot) }}
+          </span>
         </button>
       </div>
     </section>
@@ -55,6 +58,7 @@
           type="button"
           class="clip-slot"
           :class="{ active: slot.active, loaded: Boolean(slot.source) }"
+          :style="slotStyle(slot)"
           @click="triggerSlot('B', slot)"
           @contextmenu.prevent="clearSlot('B', slot)"
           @dragenter.prevent
@@ -62,7 +66,9 @@
           @drop.prevent="dropFile('B', slot, $event)"
         >
           <span class="slot-index">{{ slotAddress(slot.id) }}</span>
-          <span class="slot-name">{{ slotLabel(slot) }}</span>
+          <span class="slot-name" :class="{ overlay: Boolean(slot.thumbnail) }">
+            {{ slotLabel(slot) }}
+          </span>
         </button>
       </div>
     </section>
@@ -133,6 +139,20 @@ export default {
 
     slotLabel(slot) {
       return slot.source?.name || "Empty";
+    },
+
+    slotStyle(slot) {
+      const thumb = slot.thumbnail;
+      // Only allow data:image/* or blob: URLs to prevent CSS injection
+      if (!thumb || !/^(data:image\/|blob:)/.test(thumb)) {
+        return null;
+      }
+
+      return {
+        backgroundImage: `linear-gradient(to top, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.12)), url(${thumb})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      };
     },
 
     triggerSlot(deck, slot) {
@@ -241,6 +261,12 @@ export default {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.slot-name.overlay {
+  align-self: stretch;
+  margin: 0 -6px -6px;
+  padding: 10px 6px 6px;
 }
 
 .crossfader-column {

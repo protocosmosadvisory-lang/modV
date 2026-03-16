@@ -59,8 +59,11 @@
               <gl-component title="MIDI" :closable="false">
                 <MIDIDeviceConfig />
               </gl-component>
+              <gl-component title="MIDI Learn" :closable="false">
+                <MIDILearnView />
+              </gl-component>
               <gl-component title="BPM" :closable="false">
-                <BPMConfig />
+                <BPMPanel />
               </gl-component>
               <gl-component title="NDI" :closable="false">
                 <NDIConfig />
@@ -75,6 +78,18 @@
           <gl-stack title="Preview Stack">
             <gl-component title="Preview" :closable="false">
               <Preview />
+            </gl-component>
+
+            <gl-component title="Clip Launcher" :closable="false">
+              <ClipLauncherView />
+            </gl-component>
+
+            <gl-component title="Projection Editor" :closable="false">
+              <ProjectionEditorView />
+            </gl-component>
+
+            <gl-component title="Effect Chain" :closable="false">
+              <EffectChainView />
             </gl-component>
           </gl-stack>
         </gl-row>
@@ -92,12 +107,16 @@
 
 <script>
 import Preview from "@/components/Preview";
+import ClipLauncherView from "@/components/ClipLauncherView";
+import ProjectionEditorView from "@/components/ProjectionEditorView";
+import BPMPanel from "@/components/BPMPanel";
+import MIDILearnView from "@/components/MIDILearnView";
+import EffectChainView from "@/components/EffectChainView";
 import Groups from "@/components/Groups";
 import Gallery from "@/components/Gallery";
 import InputConfig from "@/components/InputConfig";
 import AudioVideoDeviceConfig from "@/components/InputDeviceConfig/AudioVideo.vue";
 import MIDIDeviceConfig from "@/components/InputDeviceConfig/MIDI.vue";
-import BPMConfig from "@/components/InputDeviceConfig/BPM.vue";
 import NDIConfig from "@/components/InputDeviceConfig/NDI.vue";
 import StatusBar from "@/components/StatusBar";
 import ModuleInspector from "@/components/ModuleInspector";
@@ -118,12 +137,16 @@ export default {
 
   components: {
     Preview,
+    ClipLauncherView,
+    ProjectionEditorView,
+    BPMPanel,
+    MIDILearnView,
+    EffectChainView,
     Groups,
     Gallery,
     InputConfig,
     AudioVideoDeviceConfig,
     MIDIDeviceConfig,
-    BPMConfig,
     NDIConfig,
     StatusBar,
     InfoView,
@@ -131,7 +154,7 @@ export default {
     Search,
     FrameRateDialog,
     ErrorWatcher,
-    Plugins
+    Plugins,
   },
 
   data() {
@@ -142,7 +165,7 @@ export default {
       state: null,
       layoutState: null,
 
-      triggerUiRestart: 0
+      triggerUiRestart: 0,
     };
   },
 
@@ -150,7 +173,7 @@ export default {
     focusedModules() {
       const focusedOrPinned = this.$store.getters["ui-modules/focusedOrPinned"];
       const modules = focusedOrPinned.map(
-        id => this.$modV.store.state.modules.active[id]
+        (id) => this.$modV.store.state.modules.active[id]
       );
 
       return modules;
@@ -158,10 +181,19 @@ export default {
 
     focusedActiveModule() {
       return this.$store.state["ui-modules"].focused;
-    }
+    },
   },
 
   created() {
+    // Bump this version string whenever new panels are added to the default layout.
+    // Any stored layout from a prior version is discarded so new panels appear.
+    const LAYOUT_VERSION = "grackle-1.0";
+    const storedVersion = window.localStorage.getItem("grackle-layout-version");
+    if (storedVersion !== LAYOUT_VERSION) {
+      window.localStorage.removeItem(constants.LAYOUT_STATE_KEY);
+      window.localStorage.setItem("grackle-layout-version", LAYOUT_VERSION);
+    }
+
     const layoutState = window.localStorage.getItem(constants.LAYOUT_STATE_KEY);
     if (layoutState) {
       try {
@@ -232,14 +264,14 @@ export default {
         }
 
         // eslint-disable-next-line no-for-each/no-for-each
-        childrenToSplice.forEach(index => {
+        childrenToSplice.forEach((index) => {
           content.splice(index, 1);
           config.activeItemIndex = 0;
         });
 
         if (itemsToSplice.length > 0) {
           // eslint-disable-next-line no-for-each/no-for-each
-          itemsToSplice.forEach(index => {
+          itemsToSplice.forEach((index) => {
             config.content.splice(index, 1);
             config.activeItemIndex = 0;
           });
@@ -300,20 +332,20 @@ export default {
     restartLayout() {
       this.resetGoldenLayoutState();
       this.triggerUiRestart++;
-    }
+    },
   },
 
   watch: {
     focusedActiveModule(inspectorId) {
       const index = this.$store.state["ui-modules"].pinned.findIndex(
-        item => item === inspectorId
+        (item) => item === inspectorId
       );
 
       if (index > -1) {
         this.$refs.moduleInspector[index].focus();
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

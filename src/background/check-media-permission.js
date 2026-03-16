@@ -19,9 +19,8 @@ export async function checkMediaPermission() {
   let macOSMediaDialogsAccepted = false;
   let hasMediaPermission = false;
 
-  const microphoneAccessStatus = systemPreferences.getMediaAccessStatus(
-    "microphone"
-  );
+  const microphoneAccessStatus =
+    systemPreferences.getMediaAccessStatus("microphone");
   const cameraAccessStatus = systemPreferences.getMediaAccessStatus("camera");
 
   hasMediaPermission =
@@ -39,9 +38,9 @@ export async function checkMediaPermission() {
   ) {
     dialog.showMessageBox({
       type: "warning",
-      message: "modV does not have access to camera or microphone",
+      message: "Grackle does not have access to camera or microphone",
       detail:
-        "While modV can still be used without these permissions, some functionality will be limited or broken. Please close modV, update your Security permissions and start modV again."
+        "While Grackle can still be used without these permissions, some functionality will be limited or broken. Please close Grackle, update your Security permissions and start modV again.",
     });
   }
 }
