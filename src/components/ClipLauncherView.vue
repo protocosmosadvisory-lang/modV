@@ -128,7 +128,7 @@
           <div
             v-if="slot.active"
             class="slot-progress"
-            :style="{ width: playbackProgress * 100 + '%' }"
+            :style="{ width: playbackProgressA * 100 + '%' }"
           ></div>
         </button>
       </div>
@@ -251,7 +251,7 @@
           <div
             v-if="slot.active"
             class="slot-progress"
-            :style="{ width: playbackProgress * 100 + '%' }"
+            :style="{ width: playbackProgressB * 100 + '%' }"
           ></div>
         </button>
       </div>
@@ -260,7 +260,7 @@
 </template>
 
 <script>
-import videoClipPlayer from "../application/VideoClipPlayer";
+import deckMixer from "../application/DeckMixer";
 import midiBindingService from "../application/MidiBindingService";
 import clipLauncher from "../media-manager/ClipLauncher";
 
@@ -302,6 +302,8 @@ export default {
       beatPulseTimeout: null,
       beatPollInterval: null,
       playbackProgress: 0,
+      playbackProgressA: 0,
+      playbackProgressB: 0,
       progressInterval: null,
       previewInterval: null,
       beatSyncMode: clipLauncher.beatSyncMode,
@@ -340,7 +342,9 @@ export default {
     this.lastKickState = Boolean(this.$modV?.store?.state?.beats?.kick);
     this.beatPollInterval = setInterval(this.pollBeatState, 1000 / 60);
     this.progressInterval = setInterval(() => {
-      this.playbackProgress = videoClipPlayer.progress;
+      this.playbackProgressA = deckMixer.playerA.progress;
+      this.playbackProgressB = deckMixer.playerB.progress;
+      this.playbackProgress = deckMixer.progress;
     }, 100);
     this.previewInterval = setInterval(this.drawOutputPreview, 1000 / 30);
     this.stopListeningForBeatSyncMode = clipLauncher.on(
@@ -511,7 +515,7 @@ export default {
 
     drawOutputPreview() {
       const previewCanvas = this.$refs.previewCanvas;
-      const sourceCanvas = videoClipPlayer.canvas;
+      const sourceCanvas = deckMixer.canvas;
 
       if (!previewCanvas) {
         return;

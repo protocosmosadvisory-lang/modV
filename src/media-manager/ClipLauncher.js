@@ -1,5 +1,5 @@
 import store from "../ui-store";
-import videoClipPlayer from "../application/VideoClipPlayer";
+import deckMixer from "../application/DeckMixer";
 import BeatSync from "../application/BeatSync";
 
 const DECKS = ["A", "B"];
@@ -136,8 +136,10 @@ class ClipLauncher {
       col,
     });
 
-    // Route the video source through modV's render pipeline
-    videoClipPlayer.play(slot.source, {
+    // Route the video source through the correct deck player
+    const player =
+      normalizedDeck === "A" ? deckMixer.playerA : deckMixer.playerB;
+    player.play(slot.source, {
       loopMode: slot.loopMode || "loop",
       speed: slot.speed || 1.0,
     });

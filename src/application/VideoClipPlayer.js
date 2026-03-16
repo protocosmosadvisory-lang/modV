@@ -1,33 +1,27 @@
 /**
- * VideoClipPlayer — routes a video file into modV's render pipeline.
+ * VideoClipPlayer — plays a video file into an offscreen canvas.
  *
- * Strategy: play the file in a hidden <video> element, draw each frame to an
- * offscreen <canvas>, then hijack modV's `_imageCapture` with a captureStream()
- * track from that canvas.  The existing inputLoop() in index.js picks up the
- * new ImageCapture unchanged, and any Webcam-type module already in a group
- * will render the clip automatically.
+ * Each instance draws frames to its own _canvas at native resolution.
+ * DeckMixer reads those canvases and composites them into the final
+ * output that gets piped into modV's render pipeline.
+ *
+ * Export both the class (for DeckMixer) and a legacy singleton default
+ * so any remaining direct imports still work.
  */
 
 const LOOP_MODES = ["loop", "ping-pong", "once", "hold"];
-const GALLERY_GROUP_NAME = "modV internal Gallery Group";
-const VIDEO_CLIP_MODULE_NAME = "VideoClip";
 
-class VideoClipPlayer {
+export class VideoClipPlayer {
   constructor() {
     this._video = null;
     this._canvas = null;
     this._ctx = null;
-    this._stream = null;
     this._raf = null;
     this._objectURL = null;
     this._pingPongDir = 1;
     this.loopMode = "loop";
     this.speed = 1.0;
     this._active = false;
-  }
-
-  get modV() {
-    return window.modV;
   }
 
   get currentTime() {
@@ -48,62 +42,13 @@ class VideoClipPlayer {
     return this._canvas;
   }
 
-  /**
-   * Ensure the VideoClip module is present in at least one non-gallery group.
-   * If not, create an instance and add it to the first available group.
-   * Called lazily on first play so the user sees output without manual setup.
-   */
-  async _ensureVideoClipModule() {
-    if (!this.modV) {
-      return;
-    }
-
-    const workerStore = this.modV.store;
-    const groups = workerStore.state.groups.groups;
-
-    if (!groups || groups.length === 0) {
-      return;
-    }
-
-    // Check if VideoClip is already active in any non-gallery group
-    const activeModules = workerStore.state.modules.active || {};
-    const hasVideoClipActive = Object.values(activeModules).some(
-      (m) =>
-        m.meta && m.meta.name === VIDEO_CLIP_MODULE_NAME && !m.meta.isGallery
-    );
-
-    if (hasVideoClipActive) {
-      return;
-    }
-
-    // Find first non-gallery group
-    const targetGroup = groups.find((g) => g.name !== GALLERY_GROUP_NAME);
-    if (!targetGroup) {
-      return;
-    }
-
-    try {
-      const module = await workerStore.dispatch("modules/makeActiveModule", {
-        moduleName: VIDEO_CLIP_MODULE_NAME,
-      });
-
-      if (module && module.$id) {
-        workerStore.commit("groups/ADD_MODULE_TO_GROUP", {
-          moduleId: module.$id,
-          groupId: targetGroup.id,
-          position: targetGroup.modules ? targetGroup.modules.length : 0,
-        });
-      }
-    } catch (e) {
-      // Non-fatal — user can add manually
-      console.warn("[VideoClipPlayer] Could not auto-add VideoClip module:", e);
-    }
+  get isPlaying() {
+    return this._active && this._video !== null;
   }
 
-  /** Play a File or path string through the modV render pipeline. */
+  /** Play a File or source object through this player's canvas. */
   async play(source, { loopMode = "loop", speed = 1.0 } = {}) {
     this.stop();
-    this._ensureVideoClipModule();
 
     if (!source) {
       return;
@@ -123,7 +68,7 @@ class VideoClipPlayer {
     video.muted = true;
     video.playsInline = true;
     video.preload = "auto";
-    video.loop = loopMode === "loop";
+    video.loop = this.loopMode === "loop";
     video.playbackRate = this.speed;
     video.src = url;
 
@@ -143,25 +88,14 @@ class VideoClipPlayer {
     this._canvas = canvas;
     this._ctx = ctx;
 
-    // Pipe the canvas into modV's image capture slot
-    const stream = canvas.captureStream(60);
-    this._stream = stream;
-    const [track] = stream.getVideoTracks();
-
-    if (track && this.modV) {
-      this.modV._imageCapture = new ImageCapture(track);
-    }
-
     video.play().catch(() => {});
     this._active = true;
 
-    // Handle ping-pong
-    if (loopMode === "ping-pong") {
+    if (this.loopMode === "ping-pong") {
       this._setupPingPong(video);
     }
 
-    // Handle "once" — stop after playback ends
-    if (loopMode === "once") {
+    if (this.loopMode === "once") {
       video.addEventListener(
         "ended",
         () => {
@@ -171,7 +105,6 @@ class VideoClipPlayer {
       );
     }
 
-    // Draw loop
     const drawFrame = () => {
       if (!this._active) {
         return;
@@ -187,19 +120,16 @@ class VideoClipPlayer {
     drawFrame();
   }
 
-  /** Update speed on the currently playing clip. */
+  /** Update playback rate on the running clip. */
   setSpeed(speed) {
     this.speed = Math.max(0.1, Math.min(16, Number(speed) || 1));
+
     if (this._video) {
-      this._video.playbackRate = this.speed > 0 ? this.speed : 0.1;
-      if (this.speed < 0 && !this._video.loop) {
-        // Reverse: seek backward manually via timeupdate
-        this._setupReverse();
-      }
+      this._video.playbackRate = this.speed;
     }
   }
 
-  /** Seek to a specific time (0–1 normalized). */
+  /** Seek to normalised position 0–1. */
   seek(t) {
     if (this._video && isFinite(this._video.duration)) {
       this._video.currentTime = Math.max(
@@ -224,21 +154,9 @@ class VideoClipPlayer {
       this._video = null;
     }
 
-    if (this._stream) {
-      const tracks = this._stream.getTracks();
-      for (let i = 0, len = tracks.length; i < len; i++) {
-        tracks[i].stop();
-      }
-      this._stream = null;
-    }
-
     if (this._objectURL) {
       URL.revokeObjectURL(this._objectURL);
       this._objectURL = null;
-    }
-
-    if (this.modV) {
-      this.modV._imageCapture = null;
     }
 
     this._canvas = null;
@@ -253,21 +171,26 @@ class VideoClipPlayer {
       if (!this._active) {
         return;
       }
+
       this._pingPongDir *= -1;
+
       if (this._pingPongDir < 0) {
-        // Reverse: step backward manually
         const stepBack = () => {
           if (!this._active || this._pingPongDir > 0) {
             return;
           }
+
           video.currentTime = Math.max(0, video.currentTime - 0.033);
+
           if (video.currentTime <= 0) {
             this._pingPongDir = 1;
             video.play().catch(() => {});
             return;
           }
+
           setTimeout(stepBack, 33);
         };
+
         stepBack();
       } else {
         video.currentTime = 0;
@@ -277,4 +200,5 @@ class VideoClipPlayer {
   }
 }
 
+// Legacy singleton export — kept for any direct imports that predate DeckMixer
 export default new VideoClipPlayer();

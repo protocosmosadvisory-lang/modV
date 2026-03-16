@@ -132,6 +132,7 @@ import ErrorWatcher from "@/components/ErrorWatcher";
 import Plugins from "@/components/Plugins";
 import clipLauncher from "@/media-manager/ClipLauncher";
 import midiBindingService from "@/application/MidiBindingService";
+import deckMixer from "@/application/DeckMixer";
 
 import getNextName from "@/application/utils/get-next-name";
 import constants from "@/application/constants";
@@ -222,11 +223,13 @@ export default {
     this.globalKeydownListener = (event) => this.handleGlobalKeydown(event);
     window.addEventListener("keydown", this.globalKeydownListener);
     midiBindingService.startListening();
+    deckMixer.start();
   },
 
   beforeDestroy() {
     window.removeEventListener("keydown", this.globalKeydownListener);
     midiBindingService.stopListening();
+    deckMixer.stop();
   },
 
   methods: {
