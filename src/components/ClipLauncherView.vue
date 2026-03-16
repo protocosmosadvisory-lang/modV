@@ -271,6 +271,21 @@
         :value="crossfader"
         @input="setCrossfader($event.target.value)"
       />
+      <!-- Blackout: B key hold or click to fade to black -->
+      <button
+        class="blackout-btn"
+        :class="{ 'blackout-active': blackoutOn }"
+        type="button"
+        title="Blackout (hold B or click)"
+        @mousedown="setBlackout(true)"
+        @mouseup="setBlackout(false)"
+        @mouseleave="setBlackout(false)"
+        @touchstart.prevent="setBlackout(true)"
+        @touchend.prevent="setBlackout(false)"
+      >
+        ⬛ BLACK
+      </button>
+
       <button
         class="sync-toggle beat-flash-toggle"
         :class="{ 'sync-toggle-active': beatFlashEnabled }"
@@ -506,6 +521,7 @@ export default {
       masterSpeedB: 1.0,
       blendMode: "cross",
       beatFlashEnabled: false,
+      blackoutOn: false,
       showFxA: false,
       showFxB: false,
       fxA: { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0 },
@@ -906,6 +922,11 @@ export default {
         row: -1,
         col: -1,
       });
+    },
+
+    setBlackout(active) {
+      this.blackoutOn = active;
+      deckMixer.setBlackout(active);
     },
 
     toggleBeatFlash() {
@@ -1709,6 +1730,39 @@ export default {
     background: rgba(124, 58, 255, 0.16);
     box-shadow: 0 0 0 rgba(124, 58, 255, 0.1);
   }
+}
+
+/* Blackout button */
+.blackout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(20, 20, 22, 0.95);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 80ms ease, background 80ms ease, color 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.blackout-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.blackout-active {
+  border-color: #fff;
+  color: #fff;
+  background: #000;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.9),
+    inset 0 0 12px rgba(255, 255, 255, 0.05);
 }
 
 /* Blend mode buttons */

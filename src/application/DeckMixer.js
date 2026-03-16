@@ -39,6 +39,20 @@ class DeckMixer {
     this.beatFlashIntensity = 0.35; // max brightness boost on kick
     this._kickFlash = 0;
     this._lastKick = false;
+
+    // Master blackout (0 = full black, 1 = normal)
+    this._masterOpacity = 1.0;
+    this._targetMasterOpacity = 1.0;
+    this.blackout = false;
+  }
+
+  setBlackout(active) {
+    this.blackout = active;
+    this._targetMasterOpacity = active ? 0 : 1;
+  }
+
+  setMasterOpacity(value) {
+    this._masterOpacity = Math.max(0, Math.min(1, Number(value) || 0));
   }
 
   setFx(deck, params) {
@@ -229,6 +243,24 @@ class DeckMixer {
       ctx.globalCompositeOperation =
         mode === "cross" ? "source-over" : compositeOp;
       ctx.drawImage(this.playerB.canvas, 0, 0, w, h);
+    }
+
+    // Animate master opacity toward target (smooth blackout/fadein)
+    const opacityDiff = this._targetMasterOpacity - this._masterOpacity;
+
+    if (Math.abs(opacityDiff) > 0.002) {
+      this._masterOpacity += opacityDiff * 0.15; // ~15 frames to transition
+    } else {
+      this._masterOpacity = this._targetMasterOpacity;
+    }
+
+    // Apply master opacity as a full-canvas overlay if not 1.0
+    if (this._masterOpacity < 0.999) {
+      ctx.globalAlpha = 1 - this._masterOpacity;
+      ctx.filter = "none";
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, w, h);
     }
 
     ctx.globalAlpha = 1;

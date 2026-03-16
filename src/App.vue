@@ -221,7 +221,9 @@ export default {
   async mounted() {
     this.rightColumnWidth = window.innerWidth * 0.33;
     this.globalKeydownListener = (event) => this.handleGlobalKeydown(event);
+    this.globalKeyupListener = (event) => this.handleGlobalKeyup(event);
     window.addEventListener("keydown", this.globalKeydownListener);
+    window.addEventListener("keyup", this.globalKeyupListener);
     midiBindingService.startListening();
     deckMixer.start();
     clipLauncher.reloadStaleSlots();
@@ -229,6 +231,7 @@ export default {
 
   beforeDestroy() {
     window.removeEventListener("keydown", this.globalKeydownListener);
+    window.removeEventListener("keyup", this.globalKeyupListener);
     midiBindingService.stopListening();
     deckMixer.stop();
   },
@@ -417,6 +420,18 @@ export default {
 
       if (key === "f") {
         this.requestAppFullscreen();
+        return;
+      }
+
+      // B: blackout (hold to blackout, release to restore)
+      if (key === "b") {
+        deckMixer.setBlackout(true);
+      }
+    },
+
+    handleGlobalKeyup(event) {
+      if (event.key.toLowerCase() === "b") {
+        deckMixer.setBlackout(false);
       }
     },
 
