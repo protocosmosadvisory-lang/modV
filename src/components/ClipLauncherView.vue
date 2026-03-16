@@ -79,8 +79,9 @@
           @drop.prevent="dropFile('A', slot, $event)"
         >
           <span class="slot-index">{{ slotAddress(slot.id) }}</span>
+          <span v-if="!slot.source" class="slot-empty-icon">+</span>
           <span class="slot-name" :class="{ overlay: Boolean(slot.thumbnail) }">
-            {{ slotLabel(slot) }}
+            {{ slot.source ? slotLabel(slot) : "" }}
           </span>
           <span v-if="slot.source" class="slot-meta">{{ slotMeta(slot) }}</span>
         </button>
@@ -137,8 +138,9 @@
           @drop.prevent="dropFile('B', slot, $event)"
         >
           <span class="slot-index">{{ slotAddress(slot.id) }}</span>
+          <span v-if="!slot.source" class="slot-empty-icon">+</span>
           <span class="slot-name" :class="{ overlay: Boolean(slot.thumbnail) }">
-            {{ slotLabel(slot) }}
+            {{ slot.source ? slotLabel(slot) : "" }}
           </span>
           <span v-if="slot.source" class="slot-meta">{{ slotMeta(slot) }}</span>
         </button>
@@ -330,8 +332,36 @@ export default {
         return;
       }
 
+      if (!slot.source) {
+        this.openFilePicker(deck, slot);
+        return;
+      }
+
       const { row, col } = parseSlotId(slot.id);
       clipLauncher.triggerClip(deck, row, col);
+    },
+
+    openFilePicker(deck, slot) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm";
+
+      input.addEventListener(
+        "change",
+        () => {
+          const file = input.files && input.files[0];
+
+          if (!file || !clipLauncher.isSupportedFile(file)) {
+            return;
+          }
+
+          const { row, col } = parseSlotId(slot.id);
+          clipLauncher.loadClip(deck, row, col, file);
+        },
+        { once: true }
+      );
+
+      input.click();
     },
 
     clearSlot(deck, slot) {
@@ -505,6 +535,7 @@ export default {
   justify-content: space-between;
   text-align: left;
   overflow: hidden;
+  position: relative;
   transition: background 120ms ease, border-color 120ms ease,
     transform 120ms ease;
 }
@@ -543,6 +574,22 @@ export default {
   align-self: stretch;
   margin: 0 -4px -4px;
   padding: 8px 4px 4px;
+}
+
+.slot-empty-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.1rem;
+  opacity: 0.18;
+  pointer-events: none;
+  line-height: 1;
+  transition: opacity 120ms ease;
+}
+
+.clip-slot:hover .slot-empty-icon {
+  opacity: 0.45;
 }
 
 .slot-meta {
