@@ -154,6 +154,27 @@
         :value="crossfader"
         @input="setCrossfader($event.target.value)"
       />
+      <button
+        class="sync-toggle lfo-toggle"
+        :class="{ 'sync-toggle-active': lfoActive }"
+        type="button"
+        @click="toggleLfo"
+      >
+        <span>LFO</span>
+        <span class="lfo-rate-label">{{ lfoRateLabel }}</span>
+      </button>
+      <div v-if="lfoActive" class="lfo-rate-row">
+        <span class="popover-label">Rate</span>
+        <input
+          type="range"
+          class="popover-slider"
+          min="0.1"
+          max="4"
+          step="0.1"
+          :value="lfoRate"
+          @input="lfoRate = parseFloat($event.target.value)"
+        />
+      </div>
     </section>
 
     <section class="deck-column">
@@ -276,6 +297,10 @@ export default {
       },
       midiLearnDeck: null,
       pendingMidiSlot: null,
+      lfoActive: false,
+      lfoRate: 0.5,
+      lfoPhase: 0,
+      lfoInterval: null,
     };
   },
 
@@ -313,6 +338,7 @@ export default {
     document.removeEventListener("keydown", this.onKeyDown);
     this.cancelLongPress();
     this.cancelMidiLearnMode();
+    this.stopLfo();
   },
 
   computed: {
@@ -334,6 +360,10 @@ export default {
 
     flatDeckB() {
       return flattenDeck(this.decks.B);
+    },
+
+    lfoRateLabel() {
+      return `${this.lfoRate.toFixed(1)}Hz`;
     },
   },
 
@@ -553,6 +583,41 @@ export default {
 
     setCrossfader(value) {
       clipLauncher.setCrossfader(value);
+    },
+
+    toggleLfo() {
+      if (this.lfoActive) {
+        this.stopLfo();
+      } else {
+        this.startLfo();
+      }
+    },
+
+    startLfo() {
+      this.lfoActive = true;
+      this.lfoPhase = 0;
+
+      const tick = () => {
+        if (!this.lfoActive) {
+          return;
+        }
+
+        this.lfoPhase += (2 * Math.PI * this.lfoRate) / 60;
+        const value = (Math.sin(this.lfoPhase) + 1) / 2;
+
+        clipLauncher.setCrossfader(value);
+      };
+
+      this.lfoInterval = setInterval(tick, 1000 / 60);
+    },
+
+    stopLfo() {
+      this.lfoActive = false;
+
+      if (this.lfoInterval) {
+        clearInterval(this.lfoInterval);
+        this.lfoInterval = null;
+      }
     },
 
     toggleBeatSync() {
@@ -1109,6 +1174,24 @@ export default {
   width: 100%;
   height: 100%;
   min-height: 220px;
+}
+
+.lfo-toggle {
+  margin-top: 4px;
+  gap: 6px;
+}
+
+.lfo-rate-label {
+  font-size: 0.62rem;
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+.lfo-rate-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
 }
 
 @keyframes midi-learn-ring {
