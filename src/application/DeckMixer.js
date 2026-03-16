@@ -33,6 +33,12 @@ class DeckMixer {
     this._stream = null;
     this._raf = null;
     this._active = false;
+
+    // Beat-reactive flash
+    this.beatFlashEnabled = false;
+    this.beatFlashIntensity = 0.35; // max brightness boost on kick
+    this._kickFlash = 0;
+    this._lastKick = false;
   }
 
   setFx(deck, params) {
@@ -167,10 +173,37 @@ class DeckMixer {
 
     ctx.clearRect(0, 0, w, h);
 
+    // Beat-reactive flash: detect rising edge on beats.kick
+    if (this.beatFlashEnabled) {
+      const kick = Boolean(window.modV?.store?.state?.beats?.kick);
+
+      if (kick && !this._lastKick) {
+        this._kickFlash = 1.0;
+      }
+
+      this._lastKick = kick;
+      this._kickFlash *= 0.82; // exponential decay (~10 frames to near-zero at 60fps)
+    } else {
+      this._kickFlash = 0;
+    }
+
+    const flashBoost = this._kickFlash * this.beatFlashIntensity;
+
     const alphaA = Math.max(0, Math.min(1, (1 - cf) * this._opacityA));
     const alphaB = Math.max(0, Math.min(1, cf * this._opacityB));
-    const filterA = this._buildFilter(this._fxA);
-    const filterB = this._buildFilter(this._fxB);
+
+    // Apply flash boost on top of user-set FX brightness
+    const fxAWithFlash =
+      flashBoost > 0.005
+        ? { ...this._fxA, brightness: this._fxA.brightness + flashBoost }
+        : this._fxA;
+    const fxBWithFlash =
+      flashBoost > 0.005
+        ? { ...this._fxB, brightness: this._fxB.brightness + flashBoost }
+        : this._fxB;
+
+    const filterA = this._buildFilter(fxAWithFlash);
+    const filterB = this._buildFilter(fxBWithFlash);
 
     const compositeOp =
       mode === "add"

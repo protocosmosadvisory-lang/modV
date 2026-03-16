@@ -272,6 +272,16 @@
         @input="setCrossfader($event.target.value)"
       />
       <button
+        class="sync-toggle beat-flash-toggle"
+        :class="{ 'sync-toggle-active': beatFlashEnabled }"
+        type="button"
+        title="Beat-reactive brightness flash on kick"
+        @click="toggleBeatFlash"
+      >
+        FLASH
+      </button>
+
+      <button
         class="sync-toggle lfo-toggle"
         :class="{ 'sync-toggle-active': lfoActive }"
         type="button"
@@ -495,6 +505,7 @@ export default {
       masterSpeedA: 1.0,
       masterSpeedB: 1.0,
       blendMode: "cross",
+      beatFlashEnabled: false,
       showFxA: false,
       showFxB: false,
       fxA: { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0 },
@@ -895,6 +906,11 @@ export default {
         row: -1,
         col: -1,
       });
+    },
+
+    toggleBeatFlash() {
+      this.beatFlashEnabled = !this.beatFlashEnabled;
+      deckMixer.beatFlashEnabled = this.beatFlashEnabled;
     },
 
     setBlendMode(mode) {
