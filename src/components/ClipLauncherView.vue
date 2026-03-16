@@ -378,6 +378,10 @@ export default {
       return slot.source?.name || "Empty";
     },
 
+    slotHasPlayableSource(slot) {
+      return Boolean(slot.source?.url);
+    },
+
     slotDisplayLabel(deck, slot) {
       if (this.isPendingLearnSlot(deck, slot)) {
         return "press pad";
@@ -391,6 +395,10 @@ export default {
     },
 
     slotMeta(slot) {
+      if (slot.source && !this.slotHasPlayableSource(slot)) {
+        return "not loaded";
+      }
+
       const speed = slot.speed !== 1.0 ? `${slot.speed.toFixed(1)}x` : "";
       const loop =
         slot.loopMode !== "loop"
@@ -417,7 +425,8 @@ export default {
     slotClasses(deck, slot) {
       return {
         active: slot.active,
-        loaded: Boolean(slot.source),
+        loaded: this.slotHasPlayableSource(slot),
+        placeholder: Boolean(slot.source) && !this.slotHasPlayableSource(slot),
         "midi-learn-mode": this.midiLearnDeck === deck,
         "clip-slot-pending-midi": this.isPendingLearnSlot(deck, slot),
       };
@@ -510,7 +519,10 @@ export default {
       this.longPress.slot = slot;
       this.longPress.event = event;
       this.longPress.timer = setTimeout(() => {
-        if (slot.source || this.hasMidiBinding(deck, slot)) {
+        if (
+          this.slotHasPlayableSource(slot) ||
+          this.hasMidiBinding(deck, slot)
+        ) {
           this.longPress.triggered = true;
           this.openPopover(deck, slot, event);
         }
@@ -544,7 +556,7 @@ export default {
         return;
       }
 
-      if (!slot.source) {
+      if (!this.slotHasPlayableSource(slot)) {
         this.openFilePicker(deck, slot);
         return;
       }
@@ -659,7 +671,7 @@ export default {
     openPopover(deck, slot, event) {
       const hasMidiBinding = this.hasMidiBinding(deck, slot);
 
-      if (!slot.source && !hasMidiBinding) {
+      if (!this.slotHasPlayableSource(slot) && !hasMidiBinding) {
         return;
       }
 
@@ -684,7 +696,7 @@ export default {
         slotLabel: slot.source?.name || `Slot ${this.slotAddress(slot.id)}`,
         loopMode: slot.loopMode || "loop",
         speed: slot.speed || 1.0,
-        hasClip: Boolean(slot.source),
+        hasClip: this.slotHasPlayableSource(slot),
         hasMidiBinding,
         style: { top: `${top}px`, left: `${left}px` },
       };
@@ -881,6 +893,15 @@ export default {
 
 .clip-slot.loaded {
   background: #2d3340;
+}
+
+.clip-slot.placeholder {
+  background: linear-gradient(
+    180deg,
+    rgba(124, 58, 255, 0.16),
+    rgba(36, 39, 47, 0.96)
+  );
+  border-color: rgba(124, 58, 255, 0.4);
 }
 
 .clip-slot.active {

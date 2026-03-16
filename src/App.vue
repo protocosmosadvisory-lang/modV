@@ -84,6 +84,10 @@
               <ClipLauncherView />
             </gl-component>
 
+            <gl-component title="Scenes" :closable="false">
+              <ScenePanel />
+            </gl-component>
+
             <gl-component title="Projection Editor" :closable="false">
               <ProjectionEditorView />
             </gl-component>
@@ -108,6 +112,7 @@
 <script>
 import Preview from "@/components/Preview";
 import ClipLauncherView from "@/components/ClipLauncherView";
+import ScenePanel from "@/components/ScenePanel";
 import ProjectionEditorView from "@/components/ProjectionEditorView";
 import BPMPanel from "@/components/BPMPanel";
 import MIDILearnView from "@/components/MIDILearnView";
@@ -140,6 +145,7 @@ export default {
   components: {
     Preview,
     ClipLauncherView,
+    ScenePanel,
     ProjectionEditorView,
     BPMPanel,
     MIDILearnView,

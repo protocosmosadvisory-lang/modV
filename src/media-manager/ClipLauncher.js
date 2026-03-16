@@ -126,7 +126,7 @@ class ClipLauncher {
     const normalizedDeck = normalizeDeck(deck);
     const slot = this.getSlot(normalizedDeck, row, col);
 
-    if (!slot.source) {
+    if (!slot.source || !slot.source.url) {
       return null;
     }
 
@@ -157,7 +157,7 @@ class ClipLauncher {
     const normalizedDeck = normalizeDeck(deck);
     const slot = this.getSlot(normalizedDeck, row, col);
 
-    if (!slot.source) {
+    if (!slot.source || !slot.source.url) {
       return this.beatSyncMode === "sync" ? Promise.resolve(null) : null;
     }
 
