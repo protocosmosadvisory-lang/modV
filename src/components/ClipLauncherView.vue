@@ -9,7 +9,6 @@
     }"
     @click.self="closePopover"
   >
-    <!-- Slot settings popover -->
     <div
       v-if="popover.visible"
       class="slot-popover"
@@ -18,55 +17,85 @@
     >
       <div class="popover-title">{{ popover.slotLabel }}</div>
 
-      <label class="popover-label">Loop</label>
-      <div class="popover-loop-buttons">
-        <button
-          v-for="mode in loopModes"
-          :key="mode.value"
-          type="button"
-          class="loop-btn"
-          :class="{ 'loop-btn-active': popover.loopMode === mode.value }"
-          @click="setPopoverLoop(mode.value)"
-        >
-          {{ mode.label }}
-        </button>
-      </div>
+      <template v-if="popover.hasClip">
+        <label class="popover-label">Loop</label>
+        <div class="popover-loop-buttons">
+          <button
+            v-for="mode in loopModes"
+            :key="mode.value"
+            type="button"
+            class="loop-btn"
+            :class="{ 'loop-btn-active': popover.loopMode === mode.value }"
+            @click="setPopoverLoop(mode.value)"
+          >
+            {{ mode.label }}
+          </button>
+        </div>
 
-      <label class="popover-label"
-        >Speed
-        <span class="popover-value"
-          >{{ popover.speed.toFixed(2) }}x</span
-        ></label
-      >
-      <input
-        type="range"
-        class="popover-slider"
-        min="0.1"
-        max="4"
-        step="0.05"
-        :value="popover.speed"
-        @input="setPopoverSpeed($event.target.value)"
-      />
+        <label class="popover-label"
+          >Speed
+          <span class="popover-value"
+            >{{ popover.speed.toFixed(2) }}x</span
+          ></label
+        >
+        <input
+          type="range"
+          class="popover-slider"
+          min="0.1"
+          max="4"
+          step="0.05"
+          :value="popover.speed"
+          @input="setPopoverSpeed($event.target.value)"
+        />
+      </template>
 
       <div class="popover-actions">
-        <button type="button" class="popover-apply" @click="applyPopover">
+        <button
+          v-if="popover.hasClip"
+          type="button"
+          class="popover-apply"
+          @click="applyPopover"
+        >
           Apply
         </button>
-        <button type="button" class="popover-clear" @click="clearPopoverSlot">
+        <button
+          v-if="popover.hasMidiBinding"
+          type="button"
+          class="popover-midi"
+          @click="clearPopoverMidiBinding"
+        >
+          Clear MIDI
+        </button>
+        <button
+          v-if="popover.hasClip"
+          type="button"
+          class="popover-clear"
+          @click="clearPopoverSlot"
+        >
           Clear
         </button>
       </div>
     </div>
 
     <section class="deck-column">
-      <header class="deck-title">Deck A</header>
+      <header class="deck-header">
+        <span class="deck-title">Deck A</span>
+        <button
+          type="button"
+          class="sync-toggle midi-toggle"
+          :class="{ 'sync-toggle-active': midiLearnDeck === 'A' }"
+          @click="toggleMidiLearnMode('A')"
+        >
+          MIDI
+        </button>
+      </header>
       <div class="deck-grid">
         <button
           v-for="slot in flatDeckA"
           :key="slot.id"
           type="button"
           class="clip-slot"
-          :class="{ active: slot.active, loaded: Boolean(slot.source) }"
+          :class="slotClasses('A', slot)"
           :style="slotStyle(slot)"
           @mousedown="startLongPress('A', slot, $event)"
           @mouseup="endLongPress('A', slot)"
@@ -78,17 +107,28 @@
           @dragover.prevent
           @drop.prevent="dropFile('A', slot, $event)"
         >
+          <span v-if="hasMidiBinding('A', slot)" class="slot-midi-dot"></span>
           <span class="slot-index">{{ slotAddress(slot.id) }}</span>
-          <span v-if="!slot.source" class="slot-empty-icon">+</span>
+          <span v-if="showEmptyIcon('A', slot)" class="slot-empty-icon">+</span>
           <span class="slot-name" :class="{ overlay: Boolean(slot.thumbnail) }">
-            {{ slot.source ? slotLabel(slot) : "" }}
+            {{ slotDisplayLabel("A", slot) }}
           </span>
-          <span v-if="slot.source" class="slot-meta">{{ slotMeta(slot) }}</span>
+          <span
+            v-if="slot.source && !isPendingLearnSlot('A', slot)"
+            class="slot-meta"
+            >{{ slotMeta(slot) }}</span
+          >
+          <div
+            v-if="slot.active"
+            class="slot-progress"
+            :style="{ width: playbackProgress * 100 + '%' }"
+          ></div>
         </button>
       </div>
     </section>
 
     <section class="crossfader-column">
+      <canvas ref="previewCanvas" class="output-preview"></canvas>
       <button
         class="sync-toggle"
         :class="{ 'sync-toggle-active': beatSyncMode === 'sync' }"
@@ -102,9 +142,8 @@
         ></span>
       </button>
       <div class="crossfader-labels">
-        <span>A</span>
-        <span>{{ crossfaderLabel }}</span>
-        <span>B</span>
+        <span>A {{ Math.round((1 - crossfader) * 100) }}%</span>
+        <span>B {{ Math.round(crossfader * 100) }}%</span>
       </div>
       <input
         class="crossfader"
@@ -118,14 +157,24 @@
     </section>
 
     <section class="deck-column">
-      <header class="deck-title">Deck B</header>
+      <header class="deck-header">
+        <span class="deck-title">Deck B</span>
+        <button
+          type="button"
+          class="sync-toggle midi-toggle"
+          :class="{ 'sync-toggle-active': midiLearnDeck === 'B' }"
+          @click="toggleMidiLearnMode('B')"
+        >
+          MIDI
+        </button>
+      </header>
       <div class="deck-grid">
         <button
           v-for="slot in flatDeckB"
           :key="slot.id"
           type="button"
           class="clip-slot"
-          :class="{ active: slot.active, loaded: Boolean(slot.source) }"
+          :class="slotClasses('B', slot)"
           :style="slotStyle(slot)"
           @mousedown="startLongPress('B', slot, $event)"
           @mouseup="endLongPress('B', slot)"
@@ -137,12 +186,22 @@
           @dragover.prevent
           @drop.prevent="dropFile('B', slot, $event)"
         >
+          <span v-if="hasMidiBinding('B', slot)" class="slot-midi-dot"></span>
           <span class="slot-index">{{ slotAddress(slot.id) }}</span>
-          <span v-if="!slot.source" class="slot-empty-icon">+</span>
+          <span v-if="showEmptyIcon('B', slot)" class="slot-empty-icon">+</span>
           <span class="slot-name" :class="{ overlay: Boolean(slot.thumbnail) }">
-            {{ slot.source ? slotLabel(slot) : "" }}
+            {{ slotDisplayLabel("B", slot) }}
           </span>
-          <span v-if="slot.source" class="slot-meta">{{ slotMeta(slot) }}</span>
+          <span
+            v-if="slot.source && !isPendingLearnSlot('B', slot)"
+            class="slot-meta"
+            >{{ slotMeta(slot) }}</span
+          >
+          <div
+            v-if="slot.active"
+            class="slot-progress"
+            :style="{ width: playbackProgress * 100 + '%' }"
+          ></div>
         </button>
       </div>
     </section>
@@ -150,6 +209,8 @@
 </template>
 
 <script>
+import videoClipPlayer from "../application/VideoClipPlayer";
+import midiBindingService from "../application/MidiBindingService";
 import clipLauncher from "../media-manager/ClipLauncher";
 
 const LOOP_MODES = [
@@ -189,6 +250,9 @@ export default {
       beatPulseActive: false,
       beatPulseTimeout: null,
       beatPollInterval: null,
+      playbackProgress: 0,
+      progressInterval: null,
+      previewInterval: null,
       beatSyncMode: clipLauncher.beatSyncMode,
       lastKickState: false,
       loopModes: LOOP_MODES,
@@ -199,6 +263,8 @@ export default {
         slotLabel: "",
         loopMode: "loop",
         speed: 1.0,
+        hasClip: false,
+        hasMidiBinding: false,
         style: {},
       },
       longPress: {
@@ -208,12 +274,18 @@ export default {
         slot: null,
         event: null,
       },
+      midiLearnDeck: null,
+      pendingMidiSlot: null,
     };
   },
 
   mounted() {
     this.lastKickState = Boolean(this.$modV?.store?.state?.beats?.kick);
     this.beatPollInterval = setInterval(this.pollBeatState, 1000 / 60);
+    this.progressInterval = setInterval(() => {
+      this.playbackProgress = videoClipPlayer.progress;
+    }, 100);
+    this.previewInterval = setInterval(this.drawOutputPreview, 1000 / 30);
     this.stopListeningForBeatSyncMode = clipLauncher.on(
       "beat-sync-mode-changed",
       (mode) => {
@@ -227,6 +299,10 @@ export default {
   beforeDestroy() {
     clearInterval(this.beatPollInterval);
     this.beatPollInterval = null;
+    clearInterval(this.progressInterval);
+    this.progressInterval = null;
+    clearInterval(this.previewInterval);
+    this.previewInterval = null;
     clearTimeout(this.beatPulseTimeout);
     this.beatPulseTimeout = null;
     if (this.stopListeningForBeatSyncMode) {
@@ -236,6 +312,7 @@ export default {
     document.removeEventListener("click", this.closePopover);
     document.removeEventListener("keydown", this.onKeyDown);
     this.cancelLongPress();
+    this.cancelMidiLearnMode();
   },
 
   computed: {
@@ -247,8 +324,8 @@ export default {
       return this.$store.state["clip-launcher"].crossfader;
     },
 
-    crossfaderLabel() {
-      return `${Math.round(this.crossfader * 100)}% B`;
+    midiBindings() {
+      return this.$store.state["midi-bindings"]?.bindings || {};
     },
 
     flatDeckA() {
@@ -271,6 +348,18 @@ export default {
       return slot.source?.name || "Empty";
     },
 
+    slotDisplayLabel(deck, slot) {
+      if (this.isPendingLearnSlot(deck, slot)) {
+        return "press pad";
+      }
+
+      return slot.source ? this.slotLabel(slot) : "";
+    },
+
+    showEmptyIcon(deck, slot) {
+      return !slot.source && !this.isPendingLearnSlot(deck, slot);
+    },
+
     slotMeta(slot) {
       const speed = slot.speed !== 1.0 ? `${slot.speed.toFixed(1)}x` : "";
       const loop =
@@ -284,7 +373,6 @@ export default {
 
     slotStyle(slot) {
       const thumb = slot.thumbnail;
-      // Only allow data:image/* or blob: URLs to prevent CSS injection
       if (!thumb || !/^(data:image\/|blob:)/.test(thumb)) {
         return null;
       }
@@ -296,6 +384,95 @@ export default {
       };
     },
 
+    slotClasses(deck, slot) {
+      return {
+        active: slot.active,
+        loaded: Boolean(slot.source),
+        "midi-learn-mode": this.midiLearnDeck === deck,
+        "clip-slot-pending-midi": this.isPendingLearnSlot(deck, slot),
+      };
+    },
+
+    bindingKey(deviceId, channel, note) {
+      return `${deviceId}:${channel}:${note}`;
+    },
+
+    getBindingKeyForSlot(deck, slot) {
+      const { row, col } = parseSlotId(slot.id);
+      const entries = Object.entries(this.midiBindings);
+
+      for (let i = 0, len = entries.length; i < len; i++) {
+        const [key, binding] = entries[i];
+
+        if (
+          binding.deck === deck &&
+          binding.row === row &&
+          binding.col === col
+        ) {
+          return key;
+        }
+      }
+
+      return null;
+    },
+
+    hasMidiBinding(deck, slot) {
+      return Boolean(this.getBindingKeyForSlot(deck, slot));
+    },
+
+    isPendingLearnSlot(deck, slot) {
+      if (!this.pendingMidiSlot) {
+        return false;
+      }
+
+      const { row, col } = parseSlotId(slot.id);
+
+      return (
+        this.pendingMidiSlot.deck === deck &&
+        this.pendingMidiSlot.row === row &&
+        this.pendingMidiSlot.col === col
+      );
+    },
+
+    drawOutputPreview() {
+      const previewCanvas = this.$refs.previewCanvas;
+      const sourceCanvas = videoClipPlayer.canvas;
+
+      if (!previewCanvas) {
+        return;
+      }
+
+      const ctx = previewCanvas.getContext("2d");
+      if (!ctx) {
+        return;
+      }
+
+      const cssWidth = previewCanvas.clientWidth;
+      const cssHeight = previewCanvas.clientHeight;
+
+      if (cssWidth > 0 && previewCanvas.width !== cssWidth) {
+        previewCanvas.width = cssWidth;
+      }
+
+      if (cssHeight > 0 && previewCanvas.height !== cssHeight) {
+        previewCanvas.height = cssHeight;
+      }
+
+      if (!sourceCanvas || !sourceCanvas.width || !sourceCanvas.height) {
+        ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        return;
+      }
+
+      ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      ctx.drawImage(
+        sourceCanvas,
+        0,
+        0,
+        previewCanvas.width,
+        previewCanvas.height
+      );
+    },
+
     startLongPress(deck, slot, event) {
       this.cancelLongPress();
       this.longPress.triggered = false;
@@ -303,7 +480,7 @@ export default {
       this.longPress.slot = slot;
       this.longPress.event = event;
       this.longPress.timer = setTimeout(() => {
-        if (slot.source) {
+        if (slot.source || this.hasMidiBinding(deck, slot)) {
           this.longPress.triggered = true;
           this.openPopover(deck, slot, event);
         }
@@ -329,6 +506,11 @@ export default {
     triggerSlot(deck, slot) {
       if (this.popover.visible) {
         this.closePopover();
+        return;
+      }
+
+      if (this.midiLearnDeck === deck) {
+        this.learnSlotBinding(deck, slot);
         return;
       }
 
@@ -409,10 +591,10 @@ export default {
       clipLauncher.loadClip(deck, row, col, file);
     },
 
-    // Slot settings popover
     openPopover(deck, slot, event) {
-      if (!slot.source) {
-        // No clip loaded — do nothing on right-click
+      const hasMidiBinding = this.hasMidiBinding(deck, slot);
+
+      if (!slot.source && !hasMidiBinding) {
         return;
       }
 
@@ -422,7 +604,6 @@ export default {
       let top = rect.top - containerRect.top + rect.height + 4;
       let left = rect.left - containerRect.left;
 
-      // Clamp within container
       if (left + 200 > containerRect.width) {
         left = containerRect.width - 204;
       }
@@ -435,9 +616,11 @@ export default {
         visible: true,
         deck,
         slot,
-        slotLabel: slot.source.name,
+        slotLabel: slot.source?.name || `Slot ${this.slotAddress(slot.id)}`,
         loopMode: slot.loopMode || "loop",
         speed: slot.speed || 1.0,
+        hasClip: Boolean(slot.source),
+        hasMidiBinding,
         style: { top: `${top}px`, left: `${left}px` },
       };
     },
@@ -455,7 +638,7 @@ export default {
     },
 
     applyPopover() {
-      if (!this.popover.slot) {
+      if (!this.popover.slot || !this.popover.hasClip) {
         return;
       }
 
@@ -467,7 +650,7 @@ export default {
     },
 
     clearPopoverSlot() {
-      if (!this.popover.slot) {
+      if (!this.popover.slot || !this.popover.hasClip) {
         return;
       }
 
@@ -478,9 +661,88 @@ export default {
       clipLauncher.clearSlot(deck, row, col);
     },
 
+    clearPopoverMidiBinding() {
+      if (!this.popover.slot || !this.popover.deck) {
+        return;
+      }
+
+      const key = this.getBindingKeyForSlot(
+        this.popover.deck,
+        this.popover.slot
+      );
+
+      if (key) {
+        this.$store.commit("midi-bindings/REMOVE_BINDING", key);
+      }
+
+      this.closePopover();
+    },
+
+    toggleMidiLearnMode(deck) {
+      if (this.midiLearnDeck === deck) {
+        this.cancelMidiLearnMode();
+        return;
+      }
+
+      this.closePopover();
+      midiBindingService.cancelLearn();
+      this.pendingMidiSlot = null;
+      this.midiLearnDeck = deck;
+    },
+
+    cancelMidiLearnMode() {
+      midiBindingService.cancelLearn();
+      this.pendingMidiSlot = null;
+      this.midiLearnDeck = null;
+    },
+
+    async learnSlotBinding(deck, slot) {
+      const { row, col } = parseSlotId(slot.id);
+      const pendingSlot = { deck, row, col };
+      const existingKey = this.getBindingKeyForSlot(deck, slot);
+
+      midiBindingService.cancelLearn();
+      this.pendingMidiSlot = pendingSlot;
+
+      try {
+        const { deviceId, channel, note } =
+          await midiBindingService.startLearn();
+
+        if (existingKey) {
+          this.$store.commit("midi-bindings/REMOVE_BINDING", existingKey);
+        }
+
+        this.$store.commit("midi-bindings/SET_BINDING", {
+          key: this.bindingKey(deviceId, channel, note),
+          deck,
+          row,
+          col,
+        });
+      } catch (_error) {
+        // Learn cancellation is expected during deck toggle or slot reselection.
+      } finally {
+        if (
+          this.pendingMidiSlot &&
+          this.pendingMidiSlot.deck === pendingSlot.deck &&
+          this.pendingMidiSlot.row === pendingSlot.row &&
+          this.pendingMidiSlot.col === pendingSlot.col
+        ) {
+          this.pendingMidiSlot = null;
+        }
+      }
+    },
+
     onKeyDown(e) {
-      if (e.key === "Escape" && this.popover.visible) {
+      if (e.key !== "Escape") {
+        return;
+      }
+
+      if (this.popover.visible) {
         this.closePopover();
+      }
+
+      if (this.midiLearnDeck) {
+        this.cancelMidiLearnMode();
       }
     },
   },
@@ -502,6 +764,13 @@ export default {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.deck-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 
@@ -554,6 +823,39 @@ export default {
   border-color: #5dff93;
 }
 
+.clip-slot.midi-learn-mode {
+  border-color: rgba(124, 58, 255, 0.52);
+  box-shadow: inset 0 0 0 1px rgba(124, 58, 255, 0.2);
+}
+
+.clip-slot.midi-learn-mode::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 8px;
+  border: 2px solid rgba(124, 58, 255, 0.45);
+  opacity: 0.45;
+  animation: midi-learn-ring 1.35s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.clip-slot.clip-slot-pending-midi {
+  background: rgba(124, 58, 255, 0.3);
+  border-color: #b291ff;
+  animation: midi-pending-pulse 1s ease-in-out infinite;
+}
+
+.slot-midi-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7c3aff;
+  box-shadow: 0 0 10px rgba(124, 58, 255, 0.85);
+}
+
 .slot-index {
   font-size: 0.65rem;
   opacity: 0.55;
@@ -599,7 +901,17 @@ export default {
   line-height: 1;
 }
 
-/* Popover */
+.slot-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--accent-color, #5dff93);
+  border-radius: 0 0 6px 6px;
+  transition: width 100ms linear;
+  pointer-events: none;
+}
+
 .slot-popover {
   position: absolute;
   z-index: 100;
@@ -692,6 +1004,21 @@ export default {
   background: rgba(0, 255, 136, 0.25);
 }
 
+.popover-midi {
+  font-size: 0.7rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(124, 58, 255, 0.45);
+  background: rgba(124, 58, 255, 0.12);
+  color: #cdbdff;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.popover-midi:hover {
+  background: rgba(124, 58, 255, 0.24);
+}
+
 .popover-clear {
   font-size: 0.7rem;
   padding: 6px 10px;
@@ -715,6 +1042,14 @@ export default {
   min-width: 0;
 }
 
+.output-preview {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #000;
+}
+
 .sync-toggle {
   display: flex;
   align-items: center;
@@ -736,6 +1071,12 @@ export default {
   border-color: var(--accent-color, #5dff93);
   box-shadow: 0 0 16px rgba(93, 255, 147, 0.2);
   background: rgba(31, 122, 56, 0.28);
+}
+
+.midi-toggle.sync-toggle-active {
+  border-color: #7c3aff;
+  box-shadow: 0 0 16px rgba(124, 58, 255, 0.25);
+  background: rgba(124, 58, 255, 0.2);
 }
 
 .beat-indicator {
@@ -768,6 +1109,40 @@ export default {
   width: 100%;
   height: 100%;
   min-height: 220px;
+}
+
+@keyframes midi-learn-ring {
+  0% {
+    opacity: 0.25;
+    transform: scale(0.98);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+
+  100% {
+    opacity: 0.25;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes midi-pending-pulse {
+  0% {
+    background: rgba(124, 58, 255, 0.16);
+    box-shadow: 0 0 0 rgba(124, 58, 255, 0.1);
+  }
+
+  50% {
+    background: rgba(124, 58, 255, 0.36);
+    box-shadow: 0 0 18px rgba(124, 58, 255, 0.28);
+  }
+
+  100% {
+    background: rgba(124, 58, 255, 0.16);
+    box-shadow: 0 0 0 rgba(124, 58, 255, 0.1);
+  }
 }
 
 @media (max-width: 1100px) {

@@ -1,7 +1,7 @@
 module.exports = {
   root: true,
   env: {
-    node: true
+    node: true,
   },
   extends: ["plugin:vue/essential", "@vue/prettier"],
   plugins: ["no-for-each"],
@@ -15,12 +15,12 @@ module.exports = {
       "error",
       {
         destructuring: "any",
-        ignoreReadBeforeAssign: false
-      }
+        ignoreReadBeforeAssign: false,
+      },
     ],
-    curly: "error"
+    curly: "error",
   },
   parserOptions: {
-    parser: "babel-eslint"
-  }
+    parser: "babel-eslint",
+  },
 };

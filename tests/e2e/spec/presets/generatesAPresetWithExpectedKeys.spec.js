@@ -10,7 +10,7 @@ test("generates a preset with expected keys", async () => {
     "inputs",
     "midi",
     "modules",
-    "tweens"
+    "tweens",
   ];
 
   expect(preset).toBeDefined();

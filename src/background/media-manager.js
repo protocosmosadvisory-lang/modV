@@ -16,7 +16,7 @@ export function getMediaManager() {
 
       pathChanged(message) {
         window.webContents.send("media-manager-path-changed", message);
-      }
+      },
     });
   }
 

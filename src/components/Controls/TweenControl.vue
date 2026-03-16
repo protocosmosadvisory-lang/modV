@@ -18,8 +18,9 @@
           v-for="easing in easings"
           :key="easing.value"
           :value="easing.value"
-          >{{ easing.label }}</option
         >
+          {{ easing.label }}
+        </option>
       </Select>
     </c>
 
@@ -100,7 +101,7 @@ export default {
       modelUseBpm: true,
       modelBpmDivision: 32,
       modelDurationAsTotalTime: false,
-      modelSteps: 0
+      modelSteps: 0,
     };
   },
 
@@ -113,7 +114,7 @@ export default {
   computed: {
     easings() {
       return this.$modV.store.state.tweens.easings;
-    }
+    },
   },
 
   methods: {
@@ -134,7 +135,7 @@ export default {
         useBpm,
         bpmDivision,
         durationAsTotalTime,
-        steps
+        steps,
       });
     },
 
@@ -156,9 +157,9 @@ export default {
         useBpm: true,
         bpmDivision: 32,
         durationAsTotalTime: false,
-        steps: 0
+        steps: 0,
       });
-    }
+    },
   },
 
   watch: {
@@ -175,7 +176,7 @@ export default {
       } else {
         this.setData(value);
       }
-    }
-  }
+    },
+  },
 };
 </script>

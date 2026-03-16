@@ -51,7 +51,7 @@ const actions = {
     }
 
     commit("ADD", { project, folder, item });
-  }
+  },
 };
 
 const mutations = media.mutations;
@@ -61,5 +61,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

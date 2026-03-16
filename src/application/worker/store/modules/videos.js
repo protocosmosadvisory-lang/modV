@@ -7,14 +7,14 @@ import { conformFilePath } from "../../../utils/conform-file-path";
 const state = {};
 
 const getters = {
-  video: state => id => state[id]?.outputContext?.context.canvas
+  video: (state) => (id) => state[id]?.outputContext?.context.canvas,
 };
 
 const actions = {
   createVideoFromPath({ rootState, commit }, textureDefinition) {
     const {
       id = uuidv4(),
-      options: { path: filePath }
+      options: { path: filePath },
     } = textureDefinition;
 
     const url = `modv://${path.join(
@@ -27,7 +27,7 @@ const actions = {
         type: "createWebcodecVideo",
         id,
         url,
-        textureDefinition
+        textureDefinition,
       });
     }
 
@@ -40,12 +40,12 @@ const actions = {
     const outputContext = await store.dispatch("outputs/getAuxillaryOutput", {
       name: state[id].path,
       options: {
-        desynchronized: true
+        desynchronized: true,
       },
       group: "videos",
       reactToResize: false,
       width,
-      height
+      height,
     });
 
     frameReader.read().then(function processFrame({ done, value: frame }) {
@@ -70,7 +70,7 @@ const actions = {
         if (typeof window !== "undefined") {
           self.postMessage({
             type: "removeWebcodecVideo",
-            id
+            id,
           });
         }
         return;
@@ -93,13 +93,13 @@ const actions = {
       height,
       frameReader,
       outputContext,
-      needsRemoval: false
+      needsRemoval: false,
     });
   },
 
   async removeVideoById({ commit }, { id }) {
     commit("UPDATE_VIDEO", { id, needsRemoval: true });
-  }
+  },
 };
 
 const mutations = {
@@ -114,7 +114,7 @@ const mutations = {
 
   REMOVE_VIDEO(state, { id }) {
     delete state[id];
-  }
+  },
 };
 
 export default {
@@ -122,5 +122,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

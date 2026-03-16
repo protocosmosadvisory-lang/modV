@@ -5,7 +5,7 @@ const math = require("mathjs");
 
 function getDefaultState() {
   return {
-    assignments: {}
+    assignments: {},
   };
 }
 
@@ -14,11 +14,13 @@ const swap = getDefaultState();
 
 // getters
 const getters = {
-  getByInputId: state => inputId => {
+  getByInputId: (state) => (inputId) => {
     const assignmentValues = Object.values(state.assignments);
 
-    return assignmentValues.find(assignment => assignment.inputId === inputId);
-  }
+    return assignmentValues.find(
+      (assignment) => assignment.inputId === inputId
+    );
+  },
 };
 
 function compileExpression(expression, scopeItems = {}) {
@@ -60,7 +62,7 @@ const actions = {
       // This would be something to fix in the future, maybe use an entire store
       // for swap, or write a more specific mechanism to look up values in swap
       // state.
-      inputValue: writeToSwap ? 0 : get(rootState, input.getLocation)
+      inputValue: writeToSwap ? 0 : get(rootState, input.getLocation),
     });
 
     if (!func) {
@@ -71,7 +73,7 @@ const actions = {
       id: expressionId,
       inputId,
       func,
-      expression
+      expression,
     };
 
     commit("ADD_EXPRESSION", { assignment, writeToSwap });
@@ -98,7 +100,7 @@ const actions = {
     const input = rootState.inputs.inputs[existingExpression.inputId];
 
     const func = compileExpression(expression, {
-      inputValue: get(rootState, input.getLocation)
+      inputValue: get(rootState, input.getLocation),
     });
 
     if (!func) {
@@ -127,7 +129,7 @@ const actions = {
 
       await dispatch("create", { ...assignment, writeToSwap: true });
     }
-  }
+  },
 };
 
 // mutations
@@ -141,7 +143,7 @@ const mutations = {
     delete state.assignments[id];
   },
 
-  SWAP: SWAP(swap, getDefaultState)
+  SWAP: SWAP(swap, getDefaultState),
 };
 
 export default {
@@ -149,5 +151,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

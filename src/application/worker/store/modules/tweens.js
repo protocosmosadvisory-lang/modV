@@ -5,9 +5,9 @@ import { v4 as uuidv4 } from "uuid";
 
 if (typeof window === "undefined") {
   // shims for anime in a worker
-  self.NodeList = function() {};
-  self.HTMLCollection = function() {};
-  self.SVGElement = function() {};
+  self.NodeList = function () {};
+  self.HTMLCollection = function () {};
+  self.SVGElement = function () {};
   self.window = { Promise };
 }
 
@@ -16,17 +16,17 @@ const progress = {};
 
 const state = {
   tweens: {},
-  easings: Object.keys(anime.penner).map(easing => ({
+  easings: Object.keys(anime.penner).map((easing) => ({
     value: easing,
     label: easing
       .replace(/([a-z])([A-Z])/g, "$1 $2")
-      .replace(/^\w/, c => c.toUpperCase())
-  }))
+      .replace(/^\w/, (c) => c.toUpperCase()),
+  })),
 };
 
 const getters = {
   progress: () => progress,
-  frames: () => frames
+  frames: () => frames,
 };
 
 async function buildFrames({
@@ -39,7 +39,7 @@ async function buildFrames({
   bpmDivision,
   useBpm,
   durationAsTotalTime,
-  steps
+  steps,
 }) {
   let newDuration = 1000;
 
@@ -60,7 +60,7 @@ async function buildFrames({
     seek = frames[id] / state.tweens[id].frames.length;
   }
 
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const objOut = {};
     const mapped = {};
 
@@ -93,7 +93,7 @@ async function buildFrames({
       loop,
       update(anim) {
         progress[id] = anim.progress;
-      }
+      },
     });
 
     const animationCache = [];
@@ -147,7 +147,7 @@ const actions = {
       bpmDivision = 16,
       durationAsTotalTime = false,
       isGallery,
-      steps = 0
+      steps = 0,
     }
   ) {
     const animationCache = await buildFrames({
@@ -160,7 +160,7 @@ const actions = {
       useBpm,
       bpmDivision,
       durationAsTotalTime,
-      steps
+      steps,
     });
 
     const tween = {
@@ -175,7 +175,7 @@ const actions = {
       bpmDivision,
       durationAsTotalTime,
       isGallery,
-      steps
+      steps,
     };
 
     commit("ADD_TWEEN", tween);
@@ -198,7 +198,7 @@ const actions = {
           key: "duration",
           value: tween.durationAsTotalTime
             ? calculatedBpm
-            : calculatedBpm * tween.data.length
+            : calculatedBpm * tween.data.length,
         });
 
         const frames = await buildFrames(tween);
@@ -206,14 +206,14 @@ const actions = {
         commit("UPDATE_TWEEN_VALUE", {
           id: tween.id,
           key: "frames",
-          value: frames
+          value: frames,
         });
       }
     }
   },
 
   createPresetData() {
-    return Object.values(state.tweens).filter(tween => !tween.isGallery);
+    return Object.values(state.tweens).filter((tween) => !tween.isGallery);
   },
 
   async loadPresetData(context, tweens) {
@@ -223,10 +223,10 @@ const actions = {
 
       await store.dispatch("dataTypes/createType", {
         type: "tween",
-        args: tween
+        args: tween,
       });
     }
-  }
+  },
 };
 
 const mutations = {
@@ -237,7 +237,7 @@ const mutations = {
 
   UPDATE_TWEEN_VALUE(state, { id, key, value }) {
     state.tweens[id][key] = value;
-  }
+  },
 };
 
 function advanceFrame(id) {
@@ -255,5 +255,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

@@ -7,11 +7,11 @@ const fuse = new Fuse(keys, { includeScore: true });
 const state = {
   searchables: {
     // searchTerm: ['id', 'another-id']
-  }
+  },
 };
 
 const getters = {
-  search: state => term => {
+  search: (state) => (term) => {
     const searchResults = {};
     const searchTerm = term.toLowerCase();
 
@@ -22,7 +22,7 @@ const getters = {
     const matchingKeys = fuse
       .search(searchTerm)
       .sort((a, b) => a.score - b.score)
-      .map(result => result.item);
+      .map((result) => result.item);
 
     for (let i = 0, len = matchingKeys.length; i < len; i++) {
       const itemsToAdd = state.searchables[matchingKeys[i]];
@@ -35,7 +35,7 @@ const getters = {
     }
 
     return searchResults;
-  }
+  },
 };
 
 const actions = {
@@ -48,7 +48,7 @@ const actions = {
       focusElement = false,
       type,
       isGLElement = true,
-      focusParent = false
+      focusParent = false,
     }
   ) {
     if (!id) {
@@ -65,7 +65,7 @@ const actions = {
         focusElement,
         type,
         isGLElement,
-        focusParent
+        focusParent,
       });
     }
 
@@ -78,7 +78,7 @@ const actions = {
     }
 
     commit("REMOVE_ID_FROM_TERM", id);
-  }
+  },
 };
 
 const mutations = {
@@ -97,13 +97,13 @@ const mutations = {
       focusElement,
       type,
       isGLElement,
-      focusParent
+      focusParent,
     });
   },
 
   REMOVE_ID_FROM_TERM(state, id) {
     const terms = Object.keys(state.searchables).reduce((obj, term) => {
-      const index = state.searchables[term].findIndex(item => item.id === id);
+      const index = state.searchables[term].findIndex((item) => item.id === id);
 
       if (index > -1) {
         if (!obj[term]) {
@@ -126,11 +126,11 @@ const mutations = {
 
         state.searchables[term].splice(index, 1);
         if (state.searchables[term].length < 1) {
-          fuse.remove(doc => doc === term);
+          fuse.remove((doc) => doc === term);
         }
       }
     }
-  }
+  },
 };
 
 export default {
@@ -138,5 +138,5 @@ export default {
   state,
   actions,
   mutations,
-  getters
+  getters,
 };

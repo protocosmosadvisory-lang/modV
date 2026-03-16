@@ -14,9 +14,9 @@ export default {
     value: {},
     cols: {},
     rows: {
-      default: 3
-    }
-  }
+      default: 3,
+    },
+  },
 };
 </script>
 

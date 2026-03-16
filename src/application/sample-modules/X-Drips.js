@@ -1,7 +1,7 @@
 export default {
   meta: {
     type: "2d",
-    name: "X Drips"
+    name: "X Drips",
   },
 
   props: {
@@ -9,14 +9,14 @@ export default {
       default: 70,
       type: "int",
       min: 0,
-      max: 70
+      max: 70,
     },
 
     insetHeight: {
       default: 15,
       type: "int",
       min: 0,
-      max: 70
+      max: 70,
     },
 
     maxDripHeight: {
@@ -24,8 +24,8 @@ export default {
       type: "float",
       min: 0,
       max: 1,
-      abs: true
-    }
+      abs: true,
+    },
   },
 
   data: {
@@ -34,7 +34,7 @@ export default {
     heights: [80, 145, 220],
     colors: ["#15216b", "#f33a58", "#f76272", "#ff9fda", "#e10079", "#a231ef"],
     color: "#000",
-    pattern: []
+    pattern: [],
   },
 
   generatePattern({ canvas, data }) {
@@ -57,7 +57,7 @@ export default {
           type: "width",
           width: selectedWidth,
           height: selectedHeight,
-          random
+          random,
         });
       } else {
         selectedWidth = spacings[Math.floor(Math.random() * spacings.length)];
@@ -65,7 +65,7 @@ export default {
           type: "space",
           width: selectedWidth,
           height: selectedHeight,
-          random
+          random,
         });
       }
 
@@ -152,5 +152,5 @@ export default {
 
       x += piece.width;
     }
-  }
+  },
 };

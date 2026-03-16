@@ -1,3 +1,3 @@
 module.exports = {
-  APP_SCHEME: "app"
+  APP_SCHEME: "app",
 };

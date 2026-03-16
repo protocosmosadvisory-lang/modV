@@ -29,7 +29,7 @@ export default {
     "jpg",
     "jpeg",
     "png",
-    "gif"
+    "gif",
   ],
 
   ignored: ["processed-gifs"],
@@ -62,7 +62,7 @@ export default {
           .format("mp4")
           .noAudio()
           .videoCodec("libx264")
-          .on("error", err => {
+          .on("error", (err) => {
             reject(
               new Error(
                 `An error occurred converting ${fileName}:`,
@@ -73,7 +73,7 @@ export default {
           .on("end", () => {
             resolve({
               filePath: outputStream,
-              folder: "video"
+              folder: "video",
             });
           })
           .pipe(outputStream, { end: true });
@@ -83,7 +83,7 @@ export default {
 
       reject(new Error("Unknown error"));
     });
-  }
+  },
 
   /**
    * Called before File Handler is added to the Media Manager.

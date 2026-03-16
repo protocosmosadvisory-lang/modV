@@ -10,7 +10,7 @@ import { Sketch } from "vue-color";
 
 export default {
   components: {
-    Sketch
+    Sketch,
   },
 
   data() {
@@ -19,7 +19,7 @@ export default {
       moduleId: null,
       prop: null,
       // hex, hsl, hsv, rgba, rgba-ratio
-      returnFormat: "hex"
+      returnFormat: "hex",
     };
   },
 
@@ -33,7 +33,7 @@ export default {
           r: data.r * 255,
           g: data.g * 255,
           b: data.b * 255,
-          a: data.a
+          a: data.a,
         };
       } else {
         this.color = data;
@@ -77,17 +77,17 @@ export default {
           r: color.rgba.r / 255,
           g: color.rgba.g / 255,
           b: color.rgba.b / 255,
-          a: color.rgba.a
+          a: color.rgba.a,
         };
       }
 
       ipcRenderer.send("input-update", {
         moduleId: this.moduleId,
         prop: this.prop,
-        data
+        data,
       });
-    }
-  }
+    },
+  },
 };
 </script>
 

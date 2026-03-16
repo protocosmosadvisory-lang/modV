@@ -11,7 +11,7 @@ import { conformFilePath } from "../../../utils/conform-file-path";
 const state = {};
 
 const getters = {
-  image: state => id => state[id]
+  image: (state) => (id) => state[id],
 };
 
 const actions = {
@@ -44,13 +44,13 @@ const actions = {
     const id = uuidv4();
     commit("SAVE_IMAGE", { id, imageBitmap });
     return { id };
-  }
+  },
 };
 
 const mutations = {
   SAVE_IMAGE(state, { id, imageBitmap }) {
     Vue.set(state, id, imageBitmap);
-  }
+  },
 };
 
 export default {
@@ -58,5 +58,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

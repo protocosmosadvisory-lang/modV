@@ -60,7 +60,7 @@
 
     <template v-slot:body>
       <grid columns="4">
-        <c span="2+2"><Vec2DXY :value="value" @input="xyInput"/></c>
+        <c span="2+2"><Vec2DXY :value="value" @input="xyInput" /></c>
       </grid>
     </template>
   </CollapsibleControl>
@@ -75,34 +75,34 @@ export default {
   props: {
     value: {
       type: Array,
-      required: true
+      required: true,
     },
 
     moduleId: {
       type: String,
-      required: true
+      required: true,
     },
 
     inputId: {
       type: String,
-      required: true
+      required: true,
     },
 
     inputTitle: {
       type: String,
-      required: true
+      required: true,
     },
 
     prop: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
 
   components: {
     CollapsibleControl,
     RangeControl,
-    Vec2DXY
+    Vec2DXY,
   },
 
   computed: {
@@ -144,7 +144,7 @@ export default {
 
     hasLinkZ() {
       return this.$modV.store.state.inputs.inputLinks[`${this.inputId}-2`];
-    }
+    },
   },
 
   methods: {
@@ -153,7 +153,7 @@ export default {
         id: append ? `${this.inputId}-${append}` : this.inputId,
         title: append
           ? `${this.inputTitle}.${label ? label : append}`
-          : this.inputTitle
+          : this.inputTitle,
       });
     },
 
@@ -170,15 +170,15 @@ export default {
       const value = [vars.x, vars.y, vars.z];
 
       this.$emit("input", value);
-    }
+    },
   },
 
   watch: {
     value: {
       deep: true,
-      handler() {}
-    }
-  }
+      handler() {},
+    },
+  },
 };
 </script>
 

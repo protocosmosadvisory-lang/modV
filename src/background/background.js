@@ -14,9 +14,9 @@ protocol.registerSchemesAsPrivileged([
     scheme: APP_SCHEME,
     privileges: {
       secure: true,
-      standard: true
-    }
-  }
+      standard: true,
+    },
+  },
 ]);
 
 app.on("open-file", (event, filePath) => {
@@ -51,13 +51,13 @@ function fileHandler(req, callback) {
     callback({
       // -6 is FILE_NOT_FOUND
       // https://source.chromium.org/chromium/chromium/src/+/master:net/base/net_error_list.h
-      error: -6
+      error: -6,
     });
     return;
   }
 
   callback({
-    path: requestedPath
+    path: requestedPath,
   });
 }
 
@@ -82,7 +82,7 @@ app.on("ready", async () => {
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
   if (process.platform === "win32") {
-    process.on("message", data => {
+    process.on("message", (data) => {
       if (data === "graceful-exit") {
         app.quit();
       }

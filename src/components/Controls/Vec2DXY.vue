@@ -17,19 +17,19 @@ export default {
   props: {
     value: {
       default: () => [],
-      required: true
+      required: true,
     },
 
     min: {
-      default: -1
+      default: -1,
     },
     max: {
-      default: 1
+      default: 1,
     },
     step: {
       type: Number,
-      default: 0.01
-    }
+      default: 0.01,
+    },
   },
   data() {
     return {
@@ -38,7 +38,7 @@ export default {
       currentX: 0,
       currentY: 0,
       inputX: 0,
-      inputY: 0
+      inputY: 0,
     };
   },
   computed: {
@@ -55,16 +55,16 @@ export default {
     canvasCoords() {
       return [
         (this.currentX / 2 + 0.5) * this.$refs.pad.width,
-        (1 - (this.currentY / 2 + 0.5)) * this.$refs.pad.height
+        (1 - (this.currentY / 2 + 0.5)) * this.$refs.pad.height,
       ];
-    }
+    },
   },
   watch: {
     value() {
       this.currentX = this.value[0];
       this.currentY = this.value[1];
       requestAnimationFrame(this.draw);
-    }
+    },
   },
   mounted() {
     this.$refs.pad.width = 170;
@@ -233,8 +233,8 @@ export default {
       context.beginPath();
       context.arc(x, y, 6, 0, 2 * Math.PI, true);
       context.stroke();
-    }
-  }
+    },
+  },
 };
 </script>
 

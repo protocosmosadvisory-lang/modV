@@ -15,19 +15,19 @@ export default async function addReadHandler({ readHandler }) {
 
           join: (...args) => path.join.call(args),
 
-          exists: file =>
+          exists: (file) =>
             new Promise((resolve, reject) => {
-              fs.access(file, fs.constants.F_OK, err => {
+              fs.access(file, fs.constants.F_OK, (err) => {
                 if (err) {
                   resolve();
                 } else {
                   reject();
                 }
               });
-            })
+            }),
         },
         {
-          log
+          log,
         }
       );
     } catch (e) {

@@ -8,7 +8,7 @@ import Vue from "vue";
  * glitches in the render loop.
  */
 export function SWAP(swap, getDefault, sharedPropertyRestrictions) {
-  return function(state) {
+  return function (state) {
     const stateKeys = Object.keys(state);
 
     if (stateKeys.length) {

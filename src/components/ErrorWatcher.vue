@@ -9,7 +9,7 @@
   >
     <component
       :is="{
-        template: `<span>${this.message}</span>`
+        template: `<span>${this.message}</span>`,
       }"
     ></component>
   </Dialog>
@@ -20,7 +20,7 @@ import Dialog from "./Dialog";
 
 export default {
   components: {
-    Dialog
+    Dialog,
   },
 
   computed: {
@@ -30,13 +30,13 @@ export default {
 
     messageId() {
       return Object.keys(this.$modV.store.state.errors.messages)[0];
-    }
+    },
   },
 
   methods: {
     dialogClosed() {
       this.$modV.store.dispatch("errors/deleteMessage", { id: this.messageId });
-    }
-  }
+    },
+  },
 };
 </script>

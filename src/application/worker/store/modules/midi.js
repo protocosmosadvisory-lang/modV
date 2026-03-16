@@ -2,14 +2,14 @@ import Vue from "vue";
 
 const state = {
   devices: {},
-  learning: false
+  learning: false,
 };
 
 const actions = {
   learn({ commit }) {
     let resolve;
-    const promise = new Promise(r => {
-      resolve = message => {
+    const promise = new Promise((r) => {
+      resolve = (message) => {
         commit("SET_LEARNING", false);
         r(message);
       };
@@ -26,7 +26,7 @@ const actions = {
   async loadPresetData({ commit }, newState) {
     commit("SET_STATE", newState);
     return;
-  }
+  },
 };
 
 const mutations = {
@@ -39,7 +39,7 @@ const mutations = {
       listenForInput: true,
       listenForClock: false,
       ccLatch: false,
-      noteOnLatch: false
+      noteOnLatch: false,
     });
   },
 
@@ -67,12 +67,12 @@ const mutations = {
 
       state[key] = newState[key];
     }
-  }
+  },
 };
 
 export default {
   namespaced: true,
   state,
   mutations,
-  actions
+  actions,
 };

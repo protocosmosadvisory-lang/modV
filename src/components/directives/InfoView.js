@@ -5,7 +5,7 @@ const INFO_VIEW_ID_VAR = "$iVID";
 function mouseover(id, $store) {
   return () => {
     $store.dispatch("infoView/setFocused", {
-      id
+      id,
     });
   };
 }
@@ -15,13 +15,13 @@ Vue.directive("infoView", {
   async inserted(el, binding, vnode) {
     const { value } = binding;
     const {
-      context: { $store }
+      context: { $store },
     } = vnode;
 
     const id = await $store.dispatch("infoView/addDictionaryItem", {
       id: value.id,
       title: value.title,
-      body: value.body
+      body: value.body,
     });
 
     vnode[INFO_VIEW_ID_VAR] = id;
@@ -31,11 +31,11 @@ Vue.directive("infoView", {
 
   async unbind(el, binding, vnode) {
     const {
-      context: { $store }
+      context: { $store },
     } = vnode;
 
     await $store.dispatch("infoView/removeDictionaryItem", {
-      id: vnode[INFO_VIEW_ID_VAR]
+      id: vnode[INFO_VIEW_ID_VAR],
     });
-  }
+  },
 });

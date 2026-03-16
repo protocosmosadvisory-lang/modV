@@ -4,7 +4,7 @@ const state = {
   bpm: 0,
   bpmSource: "beatdetektor",
   kick: false,
-  bpmSources: ["beatdetektor", "midi", "tap"]
+  bpmSources: ["beatdetektor", "midi", "tap"],
 };
 
 const actions = {
@@ -16,7 +16,7 @@ const actions = {
     if (source === state.bpmSource) {
       commit("SET_BPM", { bpm });
     }
-  }
+  },
 };
 
 const mutations = {
@@ -34,12 +34,12 @@ const mutations = {
 
   SET_BPM_SOURCE(state, { source }) {
     Vue.set(state, "bpmSource", source);
-  }
+  },
 };
 
 export default {
   namespaced: true,
   state,
   mutations,
-  actions
+  actions,
 };

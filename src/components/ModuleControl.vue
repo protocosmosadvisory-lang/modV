@@ -20,24 +20,24 @@ import { ActiveModuleControlContextMenu } from "../menus/context/activeModuleCon
 
 export default {
   components: {
-    Control
+    Control,
   },
 
   props: {
     prop: {
       type: String,
-      required: true
+      required: true,
     },
 
     id: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
 
   data() {
     return {
-      ActiveModuleControlContextMenu
+      ActiveModuleControlContextMenu,
     };
   },
 
@@ -69,7 +69,7 @@ export default {
       }
 
       return propData;
-    }
+    },
   },
 
   methods: {
@@ -81,12 +81,12 @@ export default {
         await this.$modV.store.dispatch("modules/updateProp", {
           moduleId,
           prop,
-          data
+          data,
         });
       } catch (e) {
         console.error(e.message);
       }
-    }
-  }
+    },
+  },
 };
 </script>

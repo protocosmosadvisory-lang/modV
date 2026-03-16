@@ -26,7 +26,7 @@
           @mousedown="select(results[key].id)"
           @mousemove="mouseMoveHandler(results[key].id, index)"
           :class="{
-            selected: index === keyboardSelectedIndex
+            selected: index === keyboardSelectedIndex,
           }"
         >
           {{ results[key].type }}: {{ results[key].title }}
@@ -46,14 +46,14 @@ export default {
       showHighlight: false,
       searchHighlightStyle: { transform: "", width: "", height: "" },
 
-      keyboardSelectedIndex: 0
+      keyboardSelectedIndex: 0,
     };
   },
 
   computed: {
     resultsKeys() {
       return Object.keys(this.results);
-    }
+    },
   },
 
   mounted() {
@@ -204,7 +204,7 @@ export default {
           selected.scrollIntoView({ block: "nearest" });
         }
       });
-    }
+    },
   },
 
   watch: {
@@ -215,8 +215,8 @@ export default {
       } else {
         this.keyboardSelectedIndex = 0;
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

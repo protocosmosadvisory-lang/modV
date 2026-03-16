@@ -16,8 +16,8 @@ export default function parseMessage(message, connection) {
             type: "media/UPDATE",
             payload: {
               media: store.state.media,
-              plugins: store.state.plugins
-            }
+              plugins: store.state.plugins,
+            },
           })
         );
         break;

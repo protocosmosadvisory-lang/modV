@@ -126,6 +126,7 @@ import FrameRateDialog from "@/components/dialogs/FrameRateDialog";
 import ErrorWatcher from "@/components/ErrorWatcher";
 import Plugins from "@/components/Plugins";
 import clipLauncher from "@/media-manager/ClipLauncher";
+import midiBindingService from "@/application/MidiBindingService";
 
 import getNextName from "@/application/utils/get-next-name";
 import constants from "@/application/constants";
@@ -214,10 +215,12 @@ export default {
     this.rightColumnWidth = window.innerWidth * 0.33;
     this.globalKeydownListener = (event) => this.handleGlobalKeydown(event);
     window.addEventListener("keydown", this.globalKeydownListener);
+    midiBindingService.startListening();
   },
 
   beforeDestroy() {
     window.removeEventListener("keydown", this.globalKeydownListener);
+    midiBindingService.stopListening();
   },
 
   methods: {

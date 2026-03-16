@@ -6,28 +6,17 @@
 
 <style scoped>
 .statusbar-item {
-  /* Pill */
-
-  /* Auto layout */
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
-  padding: 4px 15px;
-  gap: 10px;
-
-  background: #9a9a9a;
-  border-radius: 25px;
-
-  font-family: inherit;
-  font-style: normal;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 17px;
-  /* identical to box height */
-  display: flex;
   align-items: center;
-  text-align: center;
-
-  color: #000000;
+  padding: 2px 10px;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
 }
 </style>

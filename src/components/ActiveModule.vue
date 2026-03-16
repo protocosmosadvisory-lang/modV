@@ -34,11 +34,11 @@
           "
           :class="{
             'has-link': hasLink(module && module.meta.enabledInputId),
-            focused: isFocused(module && module.meta.enabledInputId)
+            focused: isFocused(module && module.meta.enabledInputId),
           }"
         >
           <c span="2">Enable</c>
-          <c span="4"><Checkbox v-model="enabled"/></c>
+          <c span="4"><Checkbox v-model="enabled" /></c>
         </grid>
       </c>
 
@@ -48,7 +48,7 @@
           @mousedown="focusInput(module && module.meta.alphaInputId, 'Alpha')"
           :class="{
             'has-link': hasLink(module && module.meta.alphaInputId),
-            focused: isFocused(module && module.meta.alphaInputId)
+            focused: isFocused(module && module.meta.alphaInputId),
           }"
         >
           <c span="2">Alpha</c>
@@ -77,7 +77,7 @@
             'has-link': hasLink(
               module && module.meta.compositeOperationInputId
             ),
-            focused: isFocused(module && module.meta.compositeOperationInputId)
+            focused: isFocused(module && module.meta.compositeOperationInputId),
           }"
         >
           <c span="2">Blend</c>
@@ -92,8 +92,9 @@
                   v-for="mode in group.children"
                   :value="mode.value"
                   :key="mode.label"
-                  >{{ mode.label }}</option
                 >
+                  {{ mode.label }}
+                </option>
               </optgroup>
             </Select>
           </c>
@@ -112,7 +113,7 @@ export default {
   props: ["id", "groupId"],
 
   components: {
-    TooltipDisplay
+    TooltipDisplay,
   },
 
   data() {
@@ -120,7 +121,7 @@ export default {
       ActiveModuleContextMenu,
       blendModes,
       showMore: false,
-      grabbing: false
+      grabbing: false,
     };
   },
 
@@ -146,9 +147,9 @@ export default {
         this.$modV.store.commit("modules/UPDATE_ACTIVE_MODULE_META", {
           id: this.id,
           metaKey: "alpha",
-          data: value
+          data: value,
         });
-      }
+      },
     },
 
     blendMode: {
@@ -163,9 +164,9 @@ export default {
         this.$modV.store.commit("modules/UPDATE_ACTIVE_MODULE_META", {
           id: this.id,
           metaKey: "compositeOperation",
-          data: value
+          data: value,
         });
-      }
+      },
     },
 
     enabled: {
@@ -180,9 +181,9 @@ export default {
         this.$modV.store.commit("modules/UPDATE_ACTIVE_MODULE_META", {
           id: this.id,
           metaKey: "enabled",
-          data: value
+          data: value,
         });
-      }
+      },
     },
 
     name() {
@@ -208,21 +209,21 @@ export default {
       );
 
       return messages;
-    }
+    },
   },
 
   methods: {
     focusInput(id, title) {
       this.$modV.store.dispatch("inputs/setFocusedInput", {
         id,
-        title: `${this.module && this.module.meta.name}: ${title}`
+        title: `${this.module && this.module.meta.name}: ${title}`,
       });
     },
 
     async clickActiveModule() {
       await this.$store.dispatch("focus/setFocus", {
         id: this.id,
-        type: "module"
+        type: "module",
       });
 
       this.$store.commit("ui-modules/SET_FOCUSED", this.id);
@@ -253,8 +254,8 @@ export default {
     titleMouseUp() {
       this.grabbing = false;
       window.removeEventListener("mouseup", this.titleMouseUp);
-    }
-  }
+    },
+  },
 };
 </script>
 

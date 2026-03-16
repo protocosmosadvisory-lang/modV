@@ -14,7 +14,7 @@ function createWindow({ windowName, options = {} }, event) {
     if (event) {
       event.reply("window-ready", {
         id: windows[windowName].webContents.id,
-        window: windowName
+        window: windowName,
       });
     }
 
@@ -31,7 +31,7 @@ function createWindow({ windowName, options = {} }, event) {
   // Create the browser window.
   windows[windowName] = new BrowserWindow({
     ...windowOptions,
-    ...options
+    ...options,
   });
 
   updateMenu(true);
@@ -68,7 +68,7 @@ function createWindow({ windowName, options = {} }, event) {
     windows[windowName].webContents.once("dom-ready", () => {
       event.reply("window-ready", {
         id: windows[windowName].webContents.id,
-        window: windowName
+        window: windowName,
       });
     });
   }

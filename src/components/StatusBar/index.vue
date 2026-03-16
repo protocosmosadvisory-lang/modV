@@ -5,8 +5,9 @@
         <component :is="item"></component>
       </StatusBarItem>
 
-      <StatusBarItem class="version">
-        {{ version }}
+      <StatusBarItem class="version grackle-version">
+        <span class="grackle-wordmark">GRACKLE</span>
+        <span class="version-num">v{{ version }}</span>
       </StatusBarItem>
     </c>
   </grid>
@@ -25,32 +26,27 @@ export default {
     StatusBarItem,
     FPSDisplay,
     BPMDisplay,
-    SizeDisplay
+    SizeDisplay,
   },
 
   data() {
     return {
       builtInItems: ["FPSDisplay", "BPMDisplay", "SizeDisplay"],
-      version: packageInfo.version
+      version: packageInfo.version,
     };
-  }
+  },
 };
 </script>
 
 <style>
 .status-bar {
-  /* padding-left: 0.5rem; */
-
-  /* Status Bar */
-
-  /* Auto layout */
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  padding: 8px;
+  padding: 4px 8px;
   gap: 8px;
-
-  background: #363636;
+  background: #111318;
+  border-top: 1px solid rgba(0, 255, 136, 0.1);
 }
 
 .status-bar.tags {
@@ -77,5 +73,19 @@ export default {
 .version {
   position: absolute;
   right: 8px;
+}
+
+.grackle-wordmark {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--grackle-accent, #00ff88);
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+
+.version-num {
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin-left: 6px;
 }
 </style>

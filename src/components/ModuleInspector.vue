@@ -30,14 +30,13 @@ export default {
   props: ["moduleId"],
 
   components: {
-    ModuleControl
+    ModuleControl,
   },
 
   mounted() {
-    this.$parent.$on("tab", tab => {
-      const button = this.$refs.moduleInspector.querySelector(
-        "button.pin-button"
-      );
+    this.$parent.$on("tab", (tab) => {
+      const button =
+        this.$refs.moduleInspector.querySelector("button.pin-button");
 
       tab.element.append(button);
     });
@@ -46,7 +45,7 @@ export default {
   computed: {
     module() {
       return this.$modV.store.state.modules.active[this.moduleId];
-    }
+    },
   },
 
   methods: {
@@ -63,17 +62,16 @@ export default {
     },
 
     getProps(moduleName) {
-      const moduleDefinition = this.$modV.store.state.modules.registered[
-        moduleName
-      ];
+      const moduleDefinition =
+        this.$modV.store.state.modules.registered[moduleName];
 
-      return Object.keys(moduleDefinition.props).filter(key =>
+      return Object.keys(moduleDefinition.props).filter((key) =>
         this.$modV.store.getters["dataTypes/types"].includes(
           moduleDefinition.props[key].type
         )
       );
-    }
-  }
+    },
+  },
 };
 </script>
 

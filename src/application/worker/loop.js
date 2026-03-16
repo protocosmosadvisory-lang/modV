@@ -18,7 +18,7 @@ function loop(delta, features, fftOutput) {
     store.dispatch("outputs/addAuxillaryOutput", {
       name: "loop-buffer",
       context: bufferContext,
-      group: "buffer"
+      group: "buffer",
     });
 
     return;
@@ -31,7 +31,7 @@ function loop(delta, features, fftOutput) {
     inputs: { inputs, inputLinks },
     outputs: { main, debug, debugContext, auxillary, webcam: video },
     renderers,
-    windows
+    windows,
   } = store.state;
 
   const groupIndexRenderOrder = store.getters["groups/groupIndexRenderOrder"];
@@ -68,7 +68,7 @@ function loop(delta, features, fftOutput) {
       type,
       location,
       data,
-      data: { path }
+      data: { path },
     } = bind;
 
     const {
@@ -77,7 +77,7 @@ function loop(delta, features, fftOutput) {
       args: linkArguments,
       min,
       max,
-      source
+      source,
     } = link;
 
     const moduleId = store.state.inputs.inputs[inputId].data.moduleId;
@@ -124,7 +124,7 @@ function loop(delta, features, fftOutput) {
     preProcessFrameFunctions[i].preProcessFrame({
       features,
       store,
-      props: preProcessFrameFunctions[i].$props
+      props: preProcessFrameFunctions[i].$props,
     });
   }
 
@@ -173,7 +173,7 @@ function loop(delta, features, fftOutput) {
       const canvasToInherit =
         inheritFrom === -1
           ? lastCanvas
-          : groups.find(group => group.id === inheritFrom).context.context
+          : groups.find((group) => group.id === inheritFrom).context.context
               .canvas;
 
       drawTo.drawImage(
@@ -235,13 +235,13 @@ function loop(delta, features, fftOutput) {
           data: { ...data },
           canvas,
           context: drawTo,
-          delta
+          delta,
         });
 
         store.commit("modules/UPDATE_ACTIVE_MODULE", {
           id: module.$id,
           key: "data",
-          value: moduleData
+          value: moduleData,
         });
       }
 
@@ -262,7 +262,7 @@ function loop(delta, features, fftOutput) {
         data: moduleData,
         pipeline,
         kick,
-        fftCanvas: fftOutput.context.canvas
+        fftCanvas: fftOutput.context.canvas,
       });
       drawTo.restore();
 
@@ -305,7 +305,7 @@ function loop(delta, features, fftOutput) {
       context: { context },
       alpha,
       enabled,
-      modules
+      modules,
     } = group;
     const groupModulesLength = modules.length;
     if (enabled !== GROUP_ENABLED || groupModulesLength < 1 || !(alpha > 0)) {
@@ -373,7 +373,7 @@ function loop(delta, features, fftOutput) {
       canvas: main.canvas,
       features,
       store,
-      props: postProcessFrameFunctions[i].$props
+      props: postProcessFrameFunctions[i].$props,
     });
   }
 }

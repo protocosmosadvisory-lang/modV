@@ -30,6 +30,24 @@ class VideoClipPlayer {
     return window.modV;
   }
 
+  get currentTime() {
+    return this._video ? this._video.currentTime : 0;
+  }
+
+  get duration() {
+    return this._video && isFinite(this._video.duration)
+      ? this._video.duration
+      : 0;
+  }
+
+  get progress() {
+    return this.duration > 0 ? this.currentTime / this.duration : 0;
+  }
+
+  get canvas() {
+    return this._canvas;
+  }
+
   /**
    * Ensure the VideoClip module is present in at least one non-gallery group.
    * If not, create an instance and add it to the first available group.

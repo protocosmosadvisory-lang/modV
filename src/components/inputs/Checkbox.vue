@@ -9,26 +9,26 @@ export default {
   props: {
     value: {
       type: Number,
-      required: true
+      required: true,
     },
 
     allowPartial: {
       type: Boolean,
-      default: false
+      default: false,
     },
 
     emitBoolean: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   data() {
     return {
       classNames: {
         0: "off",
         1: "on",
-        2: "partial"
-      }
+        2: "partial",
+      },
     };
   },
 
@@ -42,7 +42,7 @@ export default {
       }
 
       return this.classNames[inferredValue];
-    }
+    },
   },
 
   methods: {
@@ -63,8 +63,8 @@ export default {
       } else {
         this.$emit("input", value);
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

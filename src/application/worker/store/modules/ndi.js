@@ -28,8 +28,8 @@ const state = {
   ],
 
   discoveryOptions: {
-    showLocalSources: true
-  }
+    showLocalSources: true,
+  },
 };
 
 function checkCpu() {
@@ -42,7 +42,7 @@ async function waitForFrame(receiverContext) {
   const { receiver, outputId } = receiverContext;
   const {
     context,
-    context: { canvas }
+    context: { canvas },
   } = store.state.outputs.auxillary[outputId];
 
   let dataFrame;
@@ -111,7 +111,7 @@ const actions = {
     const outputContext = await store.dispatch("outputs/getAuxillaryOutput", {
       name: receiverOptions.source.name,
       group: "NDI",
-      reactToResize: false
+      reactToResize: false,
     });
 
     const receiverId = uuidv4();
@@ -119,7 +119,7 @@ const actions = {
       id: receiverId,
       outputId: outputContext.id,
       receiver,
-      enabled: false
+      enabled: false,
     };
 
     commit("ADD_RECIEVER", receiverContext);
@@ -161,7 +161,7 @@ const actions = {
     }
 
     await store.dispatch("ndi/disableReceiver", {
-      receiverId: receiverContext.id
+      receiverId: receiverContext.id,
     });
 
     await store.dispatch(
@@ -170,7 +170,7 @@ const actions = {
     );
 
     commit("DELETE_RECIEVER", receiverContext);
-  }
+  },
 };
 
 const mutations = {
@@ -196,12 +196,12 @@ const mutations = {
 
   DELETE_RECIEVER(state, receiverContext) {
     Vue.delete(state.receivers, receiverContext.id);
-  }
+  },
 };
 
 export default {
   namespaced: true,
   state,
   actions,
-  mutations
+  mutations,
 };

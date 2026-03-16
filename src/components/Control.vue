@@ -74,8 +74,9 @@
             :value="option.value"
             :key="index"
             :selected="option.selected"
-            >{{ option.label }}</option
           >
+            {{ option.label }}
+          </option>
         </Select>
       </div>
       <div class="input" v-else-if="type === 'event'">
@@ -112,32 +113,32 @@ export default {
   props: {
     inputTitle: {
       type: String,
-      default: ""
+      default: "",
     },
 
     title: {
       type: String,
-      required: true
+      required: true,
     },
 
     value: {
-      required: true
+      required: true,
     },
 
     activeProp: {
       type: Object,
-      required: true
+      required: true,
     },
 
     moduleId: {
       type: String,
-      required: false
+      required: false,
     },
 
     prop: {
       type: String,
-      required: false
-    }
+      required: false,
+    },
   },
 
   components: {
@@ -151,7 +152,7 @@ export default {
     Vec3Control,
     Vec4Control,
     Select,
-    Button
+    Button,
   },
 
   data() {
@@ -160,7 +161,7 @@ export default {
       dirty: false,
       raf: null,
 
-      modeStep: 0.01
+      modeStep: 0.01,
     };
   },
 
@@ -177,7 +178,7 @@ export default {
     focusInput() {
       this.$modV.store.dispatch("inputs/setFocusedInput", {
         id: this.inputId,
-        title: this.inputTitle
+        title: this.inputTitle,
       });
     },
 
@@ -187,7 +188,7 @@ export default {
 
     buttonUp() {
       this.internalValue = 0;
-    }
+    },
   },
 
   computed: {
@@ -223,8 +224,8 @@ export default {
       set(value) {
         this.queued = value;
         this.dirty = true;
-      }
-    }
+      },
+    },
   },
 
   watch: {
@@ -232,8 +233,8 @@ export default {
       if (value) {
         this.raf = requestAnimationFrame(this.queueLoop);
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

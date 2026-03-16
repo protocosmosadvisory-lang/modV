@@ -23,22 +23,22 @@ export default {
   props: {
     min: {
       type: Number,
-      default: -1
+      default: -1,
     },
     max: {
       type: Number,
-      default: 1
+      default: 1,
     },
     spacing: {
       type: Number,
-      default: 40
+      default: 40,
     },
     step: {
       type: Number,
-      default: 0.001
+      default: 0.001,
     },
     default: Number,
-    value: Number
+    value: Number,
   },
 
   data() {
@@ -57,7 +57,7 @@ export default {
       hasOverridenMinMax: false,
       fontFamily: "",
       resizeObserver: null,
-      lastBuzzAt: null
+      lastBuzzAt: null,
     };
   },
 
@@ -70,7 +70,7 @@ export default {
 
     spacingCalc() {
       return (this.spacing * this.spacingScale) / this.spacingModifier;
-    }
+    },
   },
 
   created() {
@@ -116,7 +116,7 @@ export default {
         baseLineHeight,
         modifiedLineHeight,
         inbetweenLineHeight,
-        fontFamily
+        fontFamily,
       } = this;
 
       context.fillStyle = "#C4C4C4";
@@ -200,7 +200,7 @@ export default {
 
     requestPointerLock() {
       const {
-        $refs: { canvas }
+        $refs: { canvas },
       } = this;
 
       document.addEventListener(
@@ -222,7 +222,7 @@ export default {
 
     lockChangeAlert() {
       const {
-        $refs: { canvas }
+        $refs: { canvas },
       } = this;
 
       if (document.pointerLockElement === canvas) {
@@ -351,7 +351,7 @@ export default {
       this.canvas.height = height * dpr;
 
       this.draw();
-    }
+    },
   },
 
   watch: {
@@ -375,8 +375,8 @@ export default {
 
     inputValue(value) {
       this.position = -value * this.spacingCalc;
-    }
-  }
+    },
+  },
 };
 </script>
 

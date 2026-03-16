@@ -12,12 +12,12 @@ function openContextMenu(e, template) {
 
 Vue.directive("contextMenu", {
   inserted(el, { value: template }) {
-    el.addEventListener("contextmenu", async e =>
+    el.addEventListener("contextmenu", async (e) =>
       openContextMenu(e, await template())
     );
   },
 
   unbind() {
     // el.removeEventListener("click", e => openContextMenu(e, template));
-  }
+  },
 });

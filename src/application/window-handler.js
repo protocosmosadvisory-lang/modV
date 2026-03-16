@@ -9,7 +9,7 @@ export default function windowHandler() {
       canvas.ownerDocument.body.style.cursor = "none";
     }
 
-    return function() {
+    return function () {
       if (mouseTimer) {
         clearTimeout(mouseTimer);
       }
@@ -22,7 +22,7 @@ export default function windowHandler() {
   function configureWindow({ win, canvas, backgroundColor }) {
     win.document.body.appendChild(canvas);
     win.document.body.style.backgroundColor = backgroundColor;
-    win.addEventListener("beforeunload", ev => {
+    win.addEventListener("beforeunload", (ev) => {
       // Setting any value other than undefined here will prevent the window
       // from closing or reloading
       ev.returnValue = true;
@@ -42,7 +42,7 @@ export default function windowHandler() {
       }
     }
 
-    return function() {
+    return function () {
       if (poll) {
         clearTimeout(poll);
       }
@@ -56,7 +56,7 @@ export default function windowHandler() {
 
     this.store.dispatch("size/setSize", {
       width,
-      height
+      height,
     });
   }
 
@@ -89,7 +89,7 @@ export default function windowHandler() {
         {
           canvas: offscreen,
           name: `window-${Object.keys(windows).length}`,
-          group: "window"
+          group: "window",
         },
         [offscreen]
       );
@@ -97,7 +97,7 @@ export default function windowHandler() {
       this.store.commit("windows/UPDATE_WINDOW", {
         id,
         key: "outputId",
-        value: outputId
+        value: outputId,
       });
 
       canvas.style.backgroundColor = "transparent";

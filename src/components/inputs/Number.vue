@@ -15,7 +15,7 @@ export default {
   methods: {
     focus() {
       this.$refs.input.focus();
-    }
+    },
   },
 
   computed: {
@@ -25,8 +25,8 @@ export default {
       delete listeners.input;
 
       return listeners;
-    }
-  }
+    },
+  },
 };
 </script>
 

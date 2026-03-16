@@ -22,7 +22,7 @@ async function start() {
 
   const commitQueue = [];
 
-  store.subscribe(mutation => {
+  store.subscribe((mutation) => {
     const { type: mutationType, payload: mutationPayload } = mutation;
 
     if (mutationType === "beats/SET_BPM" || mutationType === "fps/SET_FPS") {
@@ -53,12 +53,12 @@ async function start() {
     }
 
     const {
-      inputs: { inputs, inputLinks }
+      inputs: { inputs, inputLinks },
     } = store.state;
 
     // Update mutation type Input Links
     const mutationTypeInputLinks = Object.values(inputLinks).filter(
-      link => link.type === "mutation"
+      (link) => link.type === "mutation"
     );
     const inputLinksLength = mutationTypeInputLinks.length;
     for (let i = 0; i < inputLinksLength; ++i) {
@@ -78,7 +78,7 @@ async function start() {
 
       if (match.payload) {
         const matchPayloadKeys = Object.keys(match.payload);
-        payloadMatches = matchPayloadKeys.every(key => {
+        payloadMatches = matchPayloadKeys.every((key) => {
           const value = match.payload[key];
           return value === mutationPayload[key];
         });
@@ -108,7 +108,7 @@ async function start() {
 
     self.postMessage({
       type: "commitQueue",
-      payload: commits
+      payload: commits,
     });
   }
 
@@ -130,7 +130,7 @@ async function start() {
       resize,
       createPresetData,
       loadPresetData,
-      getModuleData
+      getModuleData,
     } = renderers(rendererName).default;
 
     store.commit("renderers/ADD_RENDERER", {
@@ -144,7 +144,7 @@ async function start() {
       createPresetData,
       loadPresetData,
       getModuleData,
-      tick
+      tick,
     });
   }
 
@@ -194,16 +194,16 @@ async function start() {
         name: fileName.replace(/(\.\/|\.fs)/g, ""),
         author: "",
         version: "1.0.0",
-        type: "isf"
+        type: "isf",
       },
       fragmentShader,
-      vertexShader
+      vertexShader,
     };
     modulesToRegister.push(isfModule);
   }
 
   await Promise.all(
-    modulesToRegister.map(module =>
+    modulesToRegister.map((module) =>
       store.dispatch("modules/registerModule", { module })
     )
   );
@@ -215,7 +215,7 @@ async function start() {
     reactToResize: false,
     width: 1920,
     height: 1080,
-    group: "input"
+    group: "input",
   });
   store.dispatch("outputs/setWebcamOutput", webcamOutput.context);
 
@@ -225,7 +225,7 @@ async function start() {
     width: constants.AUDIO_BUFFER_SIZE,
     height: 1,
     group: "audio",
-    id: "fft"
+    id: "fft",
   });
 
   // eslint-disable-next-line
@@ -268,7 +268,7 @@ async function start() {
     sendCommitQueue();
     self.postMessage({
       type: "tick",
-      payload: delta
+      payload: delta,
     });
 
     loop(delta, getFeatures(), fftOutput);
@@ -289,7 +289,7 @@ async function start() {
     }
   }
 
-  self.addEventListener("message", async e => {
+  self.addEventListener("message", async (e) => {
     const message = e.data;
     const { type, identifier, payload } = message;
     if (Array.isArray(message) && message[1].__async) {
@@ -357,7 +357,7 @@ async function start() {
     store[type](identifier, payload);
   });
 
-  registerPromiseWorker(async message => {
+  registerPromiseWorker(async (message) => {
     const { type, identifier, payload, __async } = message;
     if (__async) {
       if (type === "generatePreset") {
@@ -395,7 +395,7 @@ async function start() {
   self.store = store;
 
   self.postMessage({
-    type: "worker-setup-complete"
+    type: "worker-setup-complete",
   });
 }
 

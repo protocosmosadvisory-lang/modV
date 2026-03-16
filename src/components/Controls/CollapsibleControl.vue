@@ -23,15 +23,15 @@ export default {
   props: {
     disabled: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
 
   data() {
     return {
-      open: false
+      open: false,
     };
-  }
+  },
 };
 </script>
 

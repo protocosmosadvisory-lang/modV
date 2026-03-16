@@ -5,7 +5,7 @@
     v-searchTerms="{
       terms: ['preview', 'canvas', 'debugger'],
       title: 'Canvas Debugger',
-      type: 'Panel'
+      type: 'Panel',
     }"
   >
     <c span="1..">
@@ -16,12 +16,9 @@
           :label="group"
           :key="group"
         >
-          <option
-            v-for="output in outputs"
-            :key="output.id"
-            :value="output.id"
-            >{{ output.name }}</option
-          >
+          <option v-for="output in outputs" :key="output.id" :value="output.id">
+            {{ output.name }}
+          </option>
         </optgroup>
       </Select>
     </c>
@@ -36,7 +33,7 @@
 export default {
   data() {
     return {
-      resizeObserver: null
+      resizeObserver: null,
     };
   },
 
@@ -48,12 +45,12 @@ export default {
       {
         type: "dispatch",
         identifier: "outputs/setDebugContext",
-        payload: offscreen
+        payload: offscreen,
       },
       [offscreen]
     );
 
-    this.resizeObserver = new ResizeObserver(entries => {
+    this.resizeObserver = new ResizeObserver((entries) => {
       requestAnimationFrame(() => {
         if (!Array.isArray(entries) || !entries.length) {
           return;
@@ -94,8 +91,8 @@ export default {
 
       set(value) {
         this.$modV.store.commit("outputs/SET_DEBUG_ID", value);
-      }
-    }
+      },
+    },
   },
 
   methods: {
@@ -105,13 +102,13 @@ export default {
       this.$modV.$worker.postMessage({
         type: "dispatch",
         identifier: "outputs/resizeDebug",
-        payload: { width }
+        payload: { width },
       });
 
       // this.$refs.canvas.style.width = `${e[0].contentRect.width}px`;
       // this.$refs.canvas.style.height = `${e[0].contentRect.height}px`;
-    }
-  }
+    },
+  },
 };
 </script>
 

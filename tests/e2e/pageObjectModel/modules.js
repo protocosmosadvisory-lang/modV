@@ -26,7 +26,7 @@ export const modules = {
       ),
       blendModeSelect: page.locator(
         id`${moduleId} .active-module__blendModeSelect`
-      )
+      ),
     };
   },
 
@@ -41,8 +41,8 @@ export const modules = {
       meta: {
         alphaInputId,
         enabledInputId,
-        compositeOperationInputId
-      }
+        compositeOperationInputId,
+      },
     };
 
     inputIds.props = Object.fromEntries(
@@ -50,5 +50,5 @@ export const modules = {
     );
 
     return inputIds;
-  }
+  },
 };

@@ -3,7 +3,7 @@ export default {
     type: "2d",
     name: "Webcam",
     author: "2xAA",
-    version: "1.0.0"
+    version: "1.0.0",
   },
 
   props: {
@@ -11,20 +11,20 @@ export default {
       type: "float",
       min: 0,
       max: 10,
-      default: 1
+      default: 1,
     },
 
     position: {
       type: "vec2",
       default: [0.5, 0.5],
       min: 0,
-      max: 1
+      max: 1,
     },
 
     imageSmoothing: {
       type: "bool",
-      default: true
-    }
+      default: true,
+    },
   },
 
   draw({ canvas, context, video: { canvas: video }, props }) {
@@ -41,5 +41,5 @@ export default {
       videoWidth * scale,
       videoHeight * scale
     );
-  }
+  },
 };

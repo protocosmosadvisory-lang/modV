@@ -23,7 +23,7 @@ export function createWebcodecVideo({ id, url, textureDefinition }) {
           id,
           stream: frameStream,
           width: video.videoWidth || 256,
-          height: video.videoHeight || 256
+          height: video.videoHeight || 256,
         },
         [frameStream]
       );

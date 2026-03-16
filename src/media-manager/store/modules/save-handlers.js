@@ -12,27 +12,27 @@ function initialState() {
 }
 
 const getters = {
-  ignored: state =>
+  ignored: (state) =>
     Object.values(state).reduce(
       (arr, folder) =>
         arr.concat(folder.reduce((arr, sh) => arr.concat(sh.ignored), [])),
       []
     ),
 
-  forFileType: state => (folder, type) =>
+  forFileType: (state) => (folder, type) =>
     state[folder] &&
-    state[folder].filter(sh => sh.fileTypes.indexOf(type) > -1),
+    state[folder].filter((sh) => sh.fileTypes.indexOf(type) > -1),
 
-  folders: state => Object.keys(state)
+  folders: (state) => Object.keys(state),
 };
 
 const actions = {
   addHandler({ commit }, { saveHandler }) {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       commit("ADD", saveHandler);
       resolve();
     });
-  }
+  },
 };
 
 const mutations = {
@@ -48,7 +48,7 @@ const mutations = {
 
       state[key] = s[key];
     }
-  }
+  },
 };
 
 export default {
@@ -56,5 +56,5 @@ export default {
   state: initialState,
   getters,
   actions,
-  mutations
+  mutations,
 };

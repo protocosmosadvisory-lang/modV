@@ -19,7 +19,7 @@
         @click="clickItem(font)"
         :class="{
           selected: value === font || index === keyboardSelectedIndex,
-          keyboardSelected: index === keyboardSelectedIndex
+          keyboardSelected: index === keyboardSelectedIndex,
         }"
       >
         <span :style="{ fontFamily: font }">{{ font }}</span>
@@ -35,8 +35,8 @@ export default {
   props: {
     value: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
 
   data() {
@@ -44,7 +44,7 @@ export default {
       showFontList: false,
       searchTerm: "",
       keyboardSelectedIndex: -1,
-      fuse: null
+      fuse: null,
     };
   },
 
@@ -75,14 +75,14 @@ export default {
       return fuse
         .search(searchTerm)
         .sort((a, b) => a.score - b.score)
-        .map(result => result.item);
-    }
+        .map((result) => result.item);
+    },
   },
 
   methods: {
     input(e) {
       const {
-        target: { value }
+        target: { value },
       } = e;
 
       this.searchTerm = value;
@@ -175,16 +175,16 @@ export default {
       const fuse = new Fuse([], { includeScore: true });
 
       // eslint-disable-next-line no-for-each/no-for-each
-      fonts.forEach(fontName => fuse.add(fontName));
+      fonts.forEach((fontName) => fuse.add(fontName));
       this.fuse = fuse;
-    }
+    },
   },
 
   watch: {
     fonts(fonts) {
       this.setupFuse(fonts);
-    }
-  }
+    },
+  },
 };
 </script>
 

@@ -20,8 +20,8 @@ export default {
     max: {},
     step: {},
     value: {
-      default: 0
-    }
+      default: 0,
+    },
   },
 
   methods: {
@@ -32,8 +32,8 @@ export default {
       }
 
       this.$emit("input", valueOut);
-    }
-  }
+    },
+  },
 };
 </script>
 

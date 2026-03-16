@@ -44,5 +44,5 @@ export {
   removeSmoothingId,
   getSmoothedFeature,
   MAX_SMOOTHING,
-  SMOOTHING_STEP
+  SMOOTHING_STEP,
 };

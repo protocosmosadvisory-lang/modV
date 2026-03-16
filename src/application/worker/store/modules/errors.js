@@ -2,7 +2,7 @@ import Vue from "vue";
 import { v4 as uuidv4 } from "uuid";
 
 const state = {
-  messages: {}
+  messages: {},
 };
 
 const actions = {
@@ -16,7 +16,7 @@ const actions = {
 
   deleteMessage({ commit }, { id }) {
     commit("REMOVE_MESSAGE", { id });
-  }
+  },
 };
 
 const mutations = {
@@ -26,12 +26,12 @@ const mutations = {
 
   REMOVE_MESSAGE(state, { id }) {
     Vue.delete(state.messages, id);
-  }
+  },
 };
 
 export default {
   namespaced: true,
   state,
   mutations,
-  actions
+  actions,
 };

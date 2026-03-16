@@ -7,11 +7,11 @@ Vue.directive("searchTerms", {
   async inserted(el, binding, vnode) {
     const { value } = binding;
     const {
-      context: { $store }
+      context: { $store },
     } = vnode;
 
     const id = await $store.dispatch("search/addTerms", {
-      ...value
+      ...value,
     });
 
     vnode[SEARCH_ID_VAR] = id;
@@ -20,11 +20,11 @@ Vue.directive("searchTerms", {
 
   async unbind(el, binding, vnode) {
     const {
-      context: { $store }
+      context: { $store },
     } = vnode;
 
     await $store.dispatch("search/removeId", {
-      id: vnode[SEARCH_ID_VAR]
+      id: vnode[SEARCH_ID_VAR],
     });
-  }
+  },
 });

@@ -22,7 +22,7 @@ import Number from "../inputs/Number";
 export default {
   components: {
     Dialog,
-    Number
+    Number,
   },
 
   computed: {
@@ -33,14 +33,14 @@ export default {
 
       set(fps) {
         this.$modV.store.commit("fps/SET_FPS", { fps });
-      }
-    }
+      },
+    },
   },
 
   methods: {
     dialogClosed() {
       this.$store.commit("dialogs/REMOVE_OPEN", "frameRate");
-    }
-  }
+    },
+  },
 };
 </script>

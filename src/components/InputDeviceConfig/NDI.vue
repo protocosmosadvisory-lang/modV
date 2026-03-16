@@ -4,7 +4,7 @@
     v-searchTerms="{
       terms: ['ndi', 'newtek', 'network', 'video'],
       title: 'NDI Config',
-      type: 'Panel'
+      type: 'Panel',
     }"
   >
     <grid columns="4" class="device-config">
@@ -71,7 +71,7 @@ export default {
         "Configure your NDI inputs here. Click Discover Sources to search for NDI sources available on your network. Click Enable to create an NDI reciever so modV can consume the NDI source. Once a receiver has been created, click Remove Receiver to stop modV consuming the NDI source.",
 
       timeRemaining: 0,
-      timer: null
+      timer: null,
     };
   },
 
@@ -86,7 +86,7 @@ export default {
 
     ndiReceivers() {
       return this.$modV.store.state.ndi.receivers;
-    }
+    },
   },
 
   methods: {
@@ -110,20 +110,20 @@ export default {
     toggleReceiver(receiver) {
       if (!receiver.enabled) {
         this.$modV.store.dispatch("ndi/enableReceiver", {
-          receiverId: receiver.id
+          receiverId: receiver.id,
         });
       } else {
         this.$modV.store.dispatch("ndi/disableReceiver", {
-          receiverId: receiver.id
+          receiverId: receiver.id,
         });
       }
     },
 
     removeReceiver(receiver) {
       this.$modV.store.dispatch("ndi/removeReceiver", {
-        receiverId: receiver.id
+        receiverId: receiver.id,
       });
-    }
+    },
   },
 
   watch: {
@@ -131,8 +131,8 @@ export default {
       if (!value) {
         clearInterval(this.timer);
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

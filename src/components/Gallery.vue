@@ -5,7 +5,7 @@
     v-searchTerms="{
       terms: ['gallery'],
       title: 'Gallery',
-      type: 'Panel'
+      type: 'Panel',
     }"
   >
     <grid columns="4">
@@ -31,7 +31,7 @@
               behaviour="copy"
               group-name="modules"
               :get-child-payload="
-                e => getChildPayload('modulesByRenderer', e, renderer)
+                (e) => getChildPayload('modulesByRenderer', e, renderer)
               "
               class="fluid"
             >
@@ -51,7 +51,7 @@
                     terms: [name, 'module'],
                     title: name,
                     focusElement: true,
-                    type: 'Module'
+                    type: 'Module',
                   }"
                 />
               </Draggable>
@@ -76,7 +76,7 @@ export default {
   components: {
     Container,
     Draggable,
-    GalleryItem
+    GalleryItem,
   },
 
   data() {
@@ -88,7 +88,7 @@ export default {
       searchTerm: "",
       renderers: {},
       renderersToShow: [],
-      modulesToShow: []
+      modulesToShow: [],
     };
   },
 
@@ -116,7 +116,7 @@ export default {
 
           return obj;
         }, {});
-    }
+    },
   },
 
   async mounted() {
@@ -124,7 +124,7 @@ export default {
       name: constants.GALLERY_GROUP_NAME,
       hidden: true,
       enabled: true,
-      clearing: true
+      clearing: true,
     });
 
     this.groupId = group.id;
@@ -140,9 +140,9 @@ export default {
 
   methods: {
     getChildPayload(group, index, renderer) {
-      const moduleName = this[group][renderer][
-        Object.keys(this[group][renderer])[index]
-      ].meta.name;
+      const moduleName =
+        this[group][renderer][Object.keys(this[group][renderer])[index]].meta
+          .name;
 
       return { moduleName, collection: "gallery" };
     },
@@ -204,10 +204,10 @@ export default {
         moduleId: module.$id,
         groupId,
         position: this.$modV.store.state.groups.groups.find(
-          group => group.id === groupId
-        ).modules.length
+          (group) => group.id === groupId
+        ).modules.length,
       });
-    }
+    },
   },
 
   watch: {
@@ -217,8 +217,8 @@ export default {
 
     searchTerm() {
       this.updateModulesAndRenderersToShow();
-    }
-  }
+    },
+  },
 };
 </script>
 

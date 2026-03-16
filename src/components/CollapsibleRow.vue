@@ -25,21 +25,21 @@ export default {
   props: {
     disabled: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
 
   data() {
     return {
-      open: false
+      open: false,
     };
   },
 
   computed: {
     hasLabelSlot() {
       return !!this.$slots.label;
-    }
-  }
+    },
+  },
 };
 </script>
 

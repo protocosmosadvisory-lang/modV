@@ -3,7 +3,7 @@ export default {
     name: "TriangleLife",
     type: "2d",
     version: "0.0.0",
-    author: "radiodario"
+    author: "radiodario",
   },
 
   props: {
@@ -12,17 +12,17 @@ export default {
       type: "int",
       min: 2,
       max: 512,
-      default: 128
+      default: 128,
     },
     stroke: {
       label: "Draw Stroke",
       type: "bool",
-      default: false
+      default: false,
     },
     fill: {
       label: "Draw Fill",
       type: "bool",
-      default: true
+      default: true,
     },
     strokeWeight: {
       type: "int",
@@ -30,7 +30,7 @@ export default {
       min: 1,
       max: 30,
       default: 1,
-      abs: true
+      abs: true,
     },
     strokeJoin: {
       type: "enum",
@@ -39,43 +39,43 @@ export default {
       enum: [
         { label: "Round", value: "round" },
         { label: "Bevel", value: "bevel" },
-        { label: "Miter", value: "miter" }
-      ]
+        { label: "Miter", value: "miter" },
+      ],
     },
     speed: {
       label: "Colour Speed",
       type: "int",
       min: 1,
       max: 1000,
-      default: 500
+      default: 500,
     },
     fg_alpha: {
       label: "FG Alpha",
       type: "float",
       min: 0,
       max: 1,
-      default: 1
+      default: 1,
     },
     seeds: {
       label: "Seeds",
       type: "int",
       min: 1,
       max: 25000,
-      default: 350
+      default: 350,
     },
     updateInterval: {
       label: "Simulation Steps per Sec",
       type: "int",
       min: 1,
       max: 120, // lol
-      default: 60
+      default: 60,
     },
     drawInterval: {
       label: "Draw steps per Sec",
       type: "int",
       min: 1,
       max: 120, // lol
-      default: 60
+      default: 60,
     },
     waveform: {
       type: "enum",
@@ -85,25 +85,25 @@ export default {
         { label: "Sine", value: "sin" },
         { label: "Cosine", value: "cos" },
         { label: "Triangle", value: "triangle" },
-        { label: "Saw", value: "saw" }
-      ]
+        { label: "Saw", value: "saw" },
+      ],
     },
     monochrome: {
       label: "Monochrome",
       type: "bool",
-      default: true
+      default: true,
     },
     monochromeHue: {
       label: "Monochrome Hue",
       type: "int",
       default: 180,
       min: 0,
-      max: 360
+      max: 360,
     },
     cycleHue: {
       label: "Cycle Hue",
       type: "bool",
-      default: false
+      default: false,
     },
     rule: {
       type: "enum",
@@ -120,12 +120,12 @@ export default {
         "*3,4/4,5",
         "*3,4/4,6",
         "**4,5/4,6",
-        "*4,6/4,4"
-      ].map(r => ({ label: r, value: r })),
+        "*4,6/4,4",
+      ].map((r) => ({ label: r, value: r })),
       default: "2/1",
       set(args) {
         return this.reset(args);
-      }
+      },
     },
     resetField: {
       type: "event",
@@ -134,8 +134,8 @@ export default {
         if (args.props.resetField) {
           return this.reset(args);
         }
-      }
-    }
+      },
+    },
   },
 
   data: {
@@ -146,7 +146,7 @@ export default {
     counterIncrease: 0,
     lastUpdate: 0,
     lastDraw: 0,
-    shouldDraw: true
+    shouldDraw: true,
   },
 
   init(args) {
@@ -192,8 +192,8 @@ export default {
     props,
     context,
     context: {
-      canvas: { width, height }
-    }
+      canvas: { width, height },
+    },
   }) {
     if (data.shouldDraw) {
       var N = props.N;
@@ -206,7 +206,7 @@ export default {
 
       var translate = {
         x: (width - (N * data.edge) / 2) / 2,
-        y: (height - (N * data.edge * Math.SQRT2) / 2) / 2
+        y: (height - (N * data.edge * Math.SQRT2) / 2) / 2,
       };
 
       if (props.cycleHue) {
@@ -358,7 +358,7 @@ export default {
       [0, 2],
       [1, -1],
       [1, 0],
-      [1, 1]
+      [1, 1],
     ],
     E: [
       [-1, -1],
@@ -372,8 +372,8 @@ export default {
       [1, -1],
       [1, 0],
       [1, 1],
-      [1, 2]
-    ]
+      [1, 2],
+    ],
   },
 
   computeLiveNeighbours(idx, props, data) {
@@ -449,12 +449,12 @@ export default {
     const rule = {
       env: {
         l: 0,
-        h: 0
+        h: 0,
       },
       fer: {
         l: 0,
-        h: 0
-      }
+        h: 0,
+      },
     };
 
     // environment
@@ -479,7 +479,7 @@ export default {
       rule.fer.h = +fer;
     }
     return rule;
-  }
+  },
 };
 
 function hslToRgb(h, s, l, a) {

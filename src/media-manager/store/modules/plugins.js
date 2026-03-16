@@ -8,7 +8,7 @@ function initialState() {
    */
   return {
     plugins: {},
-    pluginData: {}
+    pluginData: {},
   };
 }
 
@@ -16,11 +16,11 @@ const getters = {};
 
 const actions = {
   addMedia({ commit }, { project, folder, item }) {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       commit("ADD", { project, folder, item });
       resolve();
     });
-  }
+  },
 };
 
 const mutations = {
@@ -44,7 +44,7 @@ const mutations = {
 
       state[key] = s[key];
     }
-  }
+  },
 };
 
 export default {
@@ -52,5 +52,5 @@ export default {
   state: initialState,
   getters,
   actions,
-  mutations
+  mutations,
 };

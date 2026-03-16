@@ -15,14 +15,14 @@ const actions = {
       y: 0,
       fullscreen: false,
       backgroundColor: "#000",
-      outputId: ""
+      outputId: "",
     };
 
     win.id = uuidv4();
     commit("ADD_WINDOW", win);
 
     return win.id;
-  }
+  },
 };
 
 const mutations = {
@@ -32,7 +32,7 @@ const mutations = {
 
   UPDATE_WINDOW(state, { id, key, value }) {
     Vue.set(state[id], key, value);
-  }
+  },
 
   // REMOVE_WINDOW(state, id) {}
 };
@@ -42,5 +42,5 @@ export default {
   state,
   // getters,
   actions,
-  mutations
+  mutations,
 };

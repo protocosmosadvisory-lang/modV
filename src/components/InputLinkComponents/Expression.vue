@@ -15,8 +15,8 @@ export default {
   props: {
     inputId: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
 
   data() {
@@ -27,7 +27,7 @@ export default {
       iVID: "Expression",
 
       expression: "value",
-      expressionId: null
+      expressionId: null,
     };
   },
 
@@ -44,7 +44,7 @@ export default {
           "expressions/update",
           {
             id: expressionId,
-            expression
+            expression,
           }
         );
       } else {
@@ -52,16 +52,15 @@ export default {
           "expressions/create",
           {
             expression,
-            inputId
+            inputId,
           }
         );
       }
     },
 
     restoreExpressionValues(inputId = this.inputId) {
-      const expressionAssignment = this.$modV.store.getters[
-        "expressions/getByInputId"
-      ](inputId);
+      const expressionAssignment =
+        this.$modV.store.getters["expressions/getByInputId"](inputId);
 
       if (expressionAssignment) {
         this.expression = expressionAssignment.expression;
@@ -70,14 +69,14 @@ export default {
         this.expression = "value";
         this.expressionId = null;
       }
-    }
+    },
   },
 
   watch: {
     inputId(inputId) {
       this.restoreExpressionValues(inputId);
-    }
-  }
+    },
+  },
 };
 </script>
 

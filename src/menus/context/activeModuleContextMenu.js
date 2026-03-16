@@ -5,34 +5,34 @@ import getPropDefault from "../../application/utils/get-prop-default";
 export const ActiveModuleContextMenu = ({
   activeModule: {
     meta: { name },
-    $id: moduleId
+    $id: moduleId,
   },
-  groupId
+  groupId,
 }) => [
   {
     label: name,
-    enabled: false
+    enabled: false,
   },
   {
-    type: "separator"
+    type: "separator",
   },
   {
     label: "Delete",
     async click() {
       uiStore.dispatch("ui-modules/removeActiveModule", {
         groupId,
-        moduleId
+        moduleId,
       });
-    }
+    },
   },
   {
     label: "Duplicate",
     click() {
       modV.store.dispatch("groups/duplicateModule", { groupId, moduleId });
-    }
+    },
   },
   {
-    type: "separator"
+    type: "separator",
   },
   {
     label: "Reset props to default values",
@@ -51,9 +51,9 @@ export const ActiveModuleContextMenu = ({
         modV.store.dispatch("modules/updateProp", {
           moduleId,
           prop: propKey,
-          data: defaultPropValue
+          data: defaultPropValue,
         });
       }
-    }
-  }
+    },
+  },
 ];

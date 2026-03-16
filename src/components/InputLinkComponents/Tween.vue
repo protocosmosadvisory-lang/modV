@@ -9,26 +9,26 @@ import TweenControl from "../Controls/TweenControl";
 
 export default {
   components: {
-    TweenControl
+    TweenControl,
   },
 
   props: {
     inputId: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
 
   data() {
     return {
-      localCache: null
+      localCache: null,
     };
   },
 
   computed: {
     hasLink() {
       return !!this.$modV.store.state.inputs.inputLinks[this.inputId];
-    }
+    },
   },
 
   methods: {
@@ -46,22 +46,22 @@ export default {
     async makeLink() {
       const tween = await this.$modV.store.dispatch("dataTypes/createType", {
         type: "tween",
-        args: { id: this.inputId, ...this.localCache }
+        args: { id: this.inputId, ...this.localCache },
       });
 
       this.hasLink = await this.$modV.store.dispatch("inputs/createInputLink", {
         inputId: this.inputId,
         type: "state",
         location: `tweens.tweens['${tween.id}'].value[0]`,
-        source: "tween"
+        source: "tween",
       });
     },
 
     removeLink() {
       this.$modV.store.dispatch("inputs/removeInputLink", {
-        inputId: this.inputId
+        inputId: this.inputId,
       });
-    }
+    },
   },
 
   watch: {
@@ -71,7 +71,7 @@ export default {
       } else {
         this.localCache = null;
       }
-    }
-  }
+    },
+  },
 };
 </script>

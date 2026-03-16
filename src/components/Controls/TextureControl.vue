@@ -7,8 +7,9 @@
           :value="tt"
           :key="tt"
           :selected="type === tt"
-          >{{ tt }}</option
         >
+          {{ tt }}
+        </option>
       </Select>
     </c>
 
@@ -44,8 +45,9 @@
               v-for="output in outputs"
               :key="output.id"
               :value="output.id"
-              >{{ output.name }}</option
             >
+              {{ output.name }}
+            </option>
           </optgroup>
         </Select>
       </div>
@@ -62,8 +64,9 @@
             v-for="(image, index) in images"
             :key="index"
             :value="image.path"
-            >{{ image.name }}</option
           >
+            {{ image.name }}
+          </option>
         </Select>
       </div>
 
@@ -79,8 +82,9 @@
             v-for="output in videos"
             :key="output.path"
             :value="output.path"
-            >{{ output.name }}</option
           >
+            {{ output.name }}
+          </option>
         </Select>
       </div>
     </c>
@@ -107,7 +111,7 @@ export default {
   props: ["value"],
 
   components: {
-    VideoControl
+    VideoControl,
   },
 
   data() {
@@ -116,7 +120,7 @@ export default {
       type: "",
       modelImagePath: "",
       modelVideoPath: "",
-      modelCanvasId: ""
+      modelCanvasId: "",
     };
   },
 
@@ -139,7 +143,7 @@ export default {
 
     groupOutputs() {
       return Object.values(this.auxillaries).filter(
-        auxillary =>
+        (auxillary) =>
           auxillary.group === "group" &&
           auxillary.name !== constants.GALLERY_GROUP_NAME
       );
@@ -175,7 +179,7 @@ export default {
           this.$modV.store.state.projects.currentProject
         ].video ?? false
       );
-    }
+    },
   },
 
   methods: {
@@ -213,34 +217,34 @@ export default {
     updateTextureDefinition(updatedValues) {
       this.$emit("input", {
         ...this.value,
-        ...updatedValues
+        ...updatedValues,
       });
     },
 
     videoPause() {
       this.updateTextureDefinition({
-        options: { ...this.value.options, paused: true }
+        options: { ...this.value.options, paused: true },
       });
     },
 
     videoPlay() {
       this.updateTextureDefinition({
-        options: { ...this.value.options, paused: false }
+        options: { ...this.value.options, paused: false },
       });
     },
 
     videoRateChange(playbackrate) {
       this.updateTextureDefinition({
-        options: { ...this.value.options, playbackrate }
+        options: { ...this.value.options, playbackrate },
       });
-    }
+    },
   },
 
   watch: {
     type(value) {
       this.setTexture(value);
-    }
-  }
+    },
+  },
 };
 </script>
 

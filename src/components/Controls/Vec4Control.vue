@@ -94,34 +94,34 @@ export default {
   props: {
     value: {
       type: Array,
-      required: true
+      required: true,
     },
 
     moduleId: {
       type: String,
-      required: true
+      required: true,
     },
 
     inputId: {
       type: String,
-      required: true
+      required: true,
     },
 
     inputTitle: {
       type: String,
-      required: true
+      required: true,
     },
 
     prop: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
 
   components: {
     CollapsibleControl,
     RangeControl,
-    Sketch
+    Sketch,
   },
 
   computed: {
@@ -171,7 +171,7 @@ export default {
 
     hasLinkW() {
       return this.$modV.store.state.inputs.inputLinks[`${this.inputId}-3`];
-    }
+    },
   },
 
   methods: {
@@ -180,7 +180,7 @@ export default {
         id: append ? `${this.inputId}-${append}` : this.inputId,
         title: append
           ? `${this.inputTitle}.${label ? label : append}`
-          : this.inputTitle
+          : this.inputTitle,
       });
     },
 
@@ -210,12 +210,12 @@ export default {
 
     vec4ToRgba([r, g, b, a]) {
       return { r: r * 255, g: g * 255, b: b * 255, a };
-    }
+    },
   },
 
   data() {
     return {
-      color: { r: 0, g: 0, b: 0, a: 1 }
+      color: { r: 0, g: 0, b: 0, a: 1 },
     };
   },
 
@@ -226,8 +226,8 @@ export default {
   watch: {
     value(vec4) {
       this.color = this.vec4ToRgba(vec4);
-    }
-  }
+    },
+  },
 };
 </script>
 

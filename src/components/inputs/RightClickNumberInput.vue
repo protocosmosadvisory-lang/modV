@@ -22,24 +22,24 @@ export default {
   props: {
     min: {
       type: Number,
-      default: -1
+      default: -1,
     },
     max: {
       type: Number,
-      default: 1
+      default: 1,
     },
     step: {
       type: Number,
-      default: 0.001
+      default: 0.001,
     },
     default: Number,
-    value: Number
+    value: Number,
   },
 
   data() {
     return {
       editMode: false,
-      inputValue: 0
+      inputValue: 0,
     };
   },
 
@@ -59,7 +59,7 @@ export default {
       if (this.editMode) {
         this.$refs.input.focus();
       }
-    }
+    },
   },
 
   watch: {
@@ -69,8 +69,8 @@ export default {
       }
 
       this.inputValue = value;
-    }
-  }
+    },
+  },
 };
 </script>
 

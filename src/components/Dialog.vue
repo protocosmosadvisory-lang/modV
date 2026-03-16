@@ -16,8 +16,8 @@ export default {
   props: {
     title: {
       type: String,
-      default: "modV"
-    }
+      default: "modV",
+    },
   },
 
   mounted() {
@@ -28,8 +28,8 @@ export default {
     close() {
       this.$emit("close");
       this.$refs.dialog.close();
-    }
-  }
+    },
+  },
 };
 </script>
 

@@ -12,7 +12,7 @@ const modules = {
   readHandlers,
   saveHandlers,
   media,
-  plugins
+  plugins,
 };
 
 const store = new Vuex.Store({
@@ -27,8 +27,8 @@ const store = new Vuex.Store({
 
         commit(`${moduleKey}/RESET_STATE`);
       }
-    }
-  }
+    },
+  },
 });
 
 export default store;

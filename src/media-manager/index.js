@@ -37,7 +37,7 @@ export default class MediaManager {
 
   constructor(options) {
     const defaults = {
-      mediaFolderName: "media"
+      mediaFolderName: "media",
     };
 
     this.addReadHandler = addReadHandler.bind(this);
@@ -71,7 +71,7 @@ export default class MediaManager {
 
     this.addSaveHandler({ saveHandler: presetSaveHandler });
 
-    store.subscribe(mutation => {
+    store.subscribe((mutation) => {
       if (mutation.type.split("/")[0] !== "media") {
         return;
       } else if (mutation.type === "media/SET_MEDIA_DIRECTORY_PATH") {
@@ -99,7 +99,7 @@ export default class MediaManager {
 
   async start() {
     await store.dispatch("media/setMediaDirectoryPath", {
-      path: this.mediaDirectoryPath
+      path: this.mediaDirectoryPath,
     });
     await this.createWatcher();
   }
@@ -107,7 +107,7 @@ export default class MediaManager {
   async reset() {
     await store.dispatch("resetAll");
     await store.dispatch("media/setMediaDirectoryPath", {
-      path: this.mediaDirectoryPath
+      path: this.mediaDirectoryPath,
     });
   }
 

@@ -8,11 +8,11 @@ const state = {
 
   debug: false,
   debugId: "main",
-  debugContext: null
+  debugContext: null,
 };
 
 const getters = {
-  canvasToDebug: state => {
+  canvasToDebug: (state) => {
     if (state.debugId === "main") {
       return { context: state.main };
     }
@@ -20,10 +20,10 @@ const getters = {
     return state.auxillary[state.debugId];
   },
 
-  resizable: state =>
-    Object.values(state.auxillary).filter(aux => aux.reactToResize),
+  resizable: (state) =>
+    Object.values(state.auxillary).filter((aux) => aux.reactToResize),
 
-  auxillaryCanvas: state => id => state.auxillary[id].context.canvas
+  auxillaryCanvas: (state) => (id) => state.auxillary[id].context.canvas,
 };
 
 /**
@@ -57,7 +57,7 @@ const actions = {
       id = "",
       reactToResize = true,
       width = state.main ? state.main.canvas.width : 300,
-      height = state.main ? state.main.canvas.height : 300
+      height = state.main ? state.main.canvas.height : 300,
     }
   ) {
     if (type === "2d") {
@@ -76,7 +76,7 @@ const actions = {
       context: canvasContext,
       reactToResize,
       group,
-      id
+      id,
     });
 
     return outputContext;
@@ -111,7 +111,7 @@ const actions = {
 
   resizeDebug({ commit }, { width, height }) {
     commit("RESIZE_DEBUG", { width, height });
-  }
+  },
 };
 
 const mutations = {
@@ -184,7 +184,7 @@ const mutations = {
 
   SET_DEBUG_CONTEXT(state, context) {
     state.debugContext = context;
-  }
+  },
 };
 
 export default {
@@ -192,5 +192,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 };

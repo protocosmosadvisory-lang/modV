@@ -5,10 +5,8 @@ import { setRangeValue } from "../../utils/setRangeValue";
 test("alpha state can be set", async () => {
   test.setTimeout(60 * 1000);
 
-  const {
-    groupIndex,
-    groupId
-  } = await modVApp.groups.getFirstUserGroupIdAndIndex();
+  const { groupIndex, groupId } =
+    await modVApp.groups.getFirstUserGroupIdAndIndex();
 
   const { alphaRange } = modVApp.groups.getLocators(groupId);
 
@@ -19,7 +17,7 @@ test("alpha state can be set", async () => {
     await setRangeValue(alphaRange, value);
 
     await modVApp.checkWorkerAndMainState(
-      [[state => state, e => e.toBeCloseTo(value)]],
+      [[(state) => state, (e) => e.toBeCloseTo(value)]],
       `groups.groups[${groupIndex}].alpha`
     );
   }

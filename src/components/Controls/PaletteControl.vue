@@ -10,7 +10,7 @@
           :key="index"
           :style="{
             backgroundColor: `rgb(${color[0]},${color[1]},${color[2]})`,
-            transitionDuration: `${modelDuration / value.data.length}ms`
+            transitionDuration: `${modelDuration / value.data.length}ms`,
           }"
           @click.right="removeSwatch(index)"
         >
@@ -32,8 +32,9 @@
           v-for="easing in easings"
           :key="easing.value"
           :value="easing.value"
-          >{{ easing.label }}</option
         >
+          {{ easing.label }}
+        </option>
       </Select>
     </c>
 
@@ -43,7 +44,7 @@
     </c>
 
     <c span="1+1">Use BPM</c>
-    <c><Checkbox v-model="modelUseBpm"/></c>
+    <c><Checkbox v-model="modelUseBpm" /></c>
 
     <c span="1+1"><label :for="`${111}-bpmDivision`">BPM Division</label></c>
     <c span="2">
@@ -101,7 +102,7 @@ export default {
 
       set(value) {
         this.updateValue("data", JSON.parse(value));
-      }
+      },
     },
 
     modelDirection: {
@@ -111,7 +112,7 @@ export default {
 
       set(value) {
         this.updateValue("direction", value);
-      }
+      },
     },
 
     modelDuration: {
@@ -121,7 +122,7 @@ export default {
 
       set(value) {
         this.updateValue("duration", value);
-      }
+      },
     },
 
     modelUseBpm: {
@@ -131,7 +132,7 @@ export default {
 
       set(value) {
         this.updateValue("useBpm", value);
-      }
+      },
     },
 
     modelEasing: {
@@ -141,7 +142,7 @@ export default {
 
       set(value) {
         this.updateValue("easing", value);
-      }
+      },
     },
 
     modelBpmDivision: {
@@ -151,7 +152,7 @@ export default {
 
       set(value) {
         this.updateValue("bpmDivision", value);
-      }
+      },
     },
 
     modelDurationAsTotalTime: {
@@ -161,7 +162,7 @@ export default {
 
       set(value) {
         this.updateValue("durationAsTotalTime", value);
-      }
+      },
     },
 
     easings() {
@@ -175,8 +176,8 @@ export default {
 
       set(value) {
         return this.updateValue("steps", value);
-      }
-    }
+      },
+    },
   },
 
   methods: {
@@ -189,9 +190,7 @@ export default {
     },
 
     updateModel(event, index) {
-      const rgb = Color(event.target.value)
-        .rgb()
-        .array();
+      const rgb = Color(event.target.value).rgb().array();
       const newColors = this.value.data.slice();
       newColors[index] = rgb;
 
@@ -210,8 +209,8 @@ export default {
       newColors.splice(index, 1);
 
       this.$emit("input", { ...this.value, data: newColors });
-    }
-  }
+    },
+  },
 };
 </script>
 

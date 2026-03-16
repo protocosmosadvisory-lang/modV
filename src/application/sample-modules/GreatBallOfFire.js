@@ -3,7 +3,7 @@ export default {
     name: "Great Ball Of Fire",
     author: ":)",
     version: "1.0.0",
-    type: "isf"
+    type: "isf",
   },
   fragmentShader: `/*{
     "CREDIT": "by mojovideotech",
@@ -245,5 +245,5 @@ export default {
     
     gl_FragColor = col;
   }`,
-  vertexShader: "void main() {isf_vertShaderInit();}"
+  vertexShader: "void main() {isf_vertShaderInit();}",
 };

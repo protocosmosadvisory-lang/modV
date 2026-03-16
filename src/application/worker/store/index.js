@@ -9,9 +9,8 @@ const moduleKeys = requireModule.keys();
 for (let i = 0, len = moduleKeys.length; i < len; i++) {
   const moduleName = moduleKeys[i];
 
-  modules[moduleName.replace(/(\.\/|\.js)/g, "")] = requireModule(
-    moduleName
-  ).default;
+  modules[moduleName.replace(/(\.\/|\.js)/g, "")] =
+    requireModule(moduleName).default;
 }
 
 Vue.use(Vuex);
@@ -24,7 +23,7 @@ const plugins = [];
 // we'll need to implement something more complex to commit via postMessage.
 if (self.document !== undefined) {
   const dataState = createPersistedState({
-    paths: ["mediaStream"]
+    paths: ["mediaStream"],
   });
 
   plugins.push(dataState);
@@ -33,5 +32,5 @@ if (self.document !== undefined) {
 export default new Vuex.Store({
   modules,
   plugins,
-  strict: false
+  strict: false,
 });

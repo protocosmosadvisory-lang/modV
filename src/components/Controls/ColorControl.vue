@@ -96,33 +96,33 @@ export default {
   props: {
     value: {
       type: String,
-      required: true
+      required: true,
     },
 
     moduleId: {
       type: String,
-      required: true
+      required: true,
     },
 
     inputId: {
       type: String,
-      required: true
+      required: true,
     },
 
     inputTitle: {
       type: String,
-      required: true
+      required: true,
     },
 
     prop: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
 
   components: {
     CollapsibleControl,
-    RangeControl
+    RangeControl,
   },
 
   computed: {
@@ -177,12 +177,12 @@ export default {
 
     hasLinkA() {
       return this.$modV.store.state.inputs.inputLinks[`${this.inputId}-a`];
-    }
+    },
   },
 
   data() {
     return {
-      pickerWindowId: null
+      pickerWindowId: null,
     };
   },
 
@@ -199,7 +199,7 @@ export default {
         ipcRenderer.sendTo(id, "module-info", {
           moduleId: this.moduleId,
           prop: this.prop,
-          data: this.value
+          data: this.value,
         });
 
         this.windowId = id;
@@ -209,7 +209,7 @@ export default {
     focusInput(append) {
       this.$modV.store.dispatch("inputs/setFocusedInput", {
         id: append ? `${this.inputId}-${append}` : this.inputId,
-        title: append ? `${this.inputTitle}.${append}` : this.inputTitle
+        title: append ? `${this.inputTitle}.${append}` : this.inputTitle,
       });
     },
 
@@ -222,7 +222,7 @@ export default {
       const value = { r: vars.red, g: vars.green, b: vars.blue, a: vars.alpha };
 
       this.$emit("input", value);
-    }
+    },
   },
 
   watch: {
@@ -233,12 +233,12 @@ export default {
           ipcRenderer.sendTo(this.windowId, "module-info", {
             moduleId: this.moduleId,
             prop: this.prop,
-            data: this.value
+            data: this.value,
           });
         }
-      }
-    }
-  }
+      },
+    },
+  },
 };
 </script>
 

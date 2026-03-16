@@ -3,7 +3,7 @@
     v-searchTerms="{
       terms: ['bpm', 'tempo', 'beats per minute'],
       title: 'BPM Config',
-      type: 'Panel'
+      type: 'Panel',
     }"
     columns="4"
     class="device-config"
@@ -15,8 +15,9 @@
           v-for="(source, index) in bpmSources"
           :value="source"
           :key="index"
-          >{{ source }}</option
         >
+          {{ source }}
+        </option>
       </Select>
     </c>
     <c span="1..">
@@ -35,13 +36,13 @@ const tapTempo = new Tt();
 
 export default {
   created() {
-    tapTempo.on("tempo", bpm => {
+    tapTempo.on("tempo", (bpm) => {
       if (this.bpm === Math.round(bpm)) {
         return;
       }
       this.$modV.store.dispatch("beats/setBpm", {
         bpm: Math.round(bpm),
-        source: "tap"
+        source: "tap",
       });
     });
   },
@@ -58,12 +59,12 @@ export default {
 
       set(source) {
         this.$modV.store.commit("beats/SET_BPM_SOURCE", { source });
-      }
+      },
     },
 
     bpmSources() {
       return this.$modV.store.state.beats.bpmSources;
-    }
+    },
   },
 
   methods: {
@@ -71,7 +72,7 @@ export default {
       this.$modV.store.commit("midi/UPDATE_DEVICE", {
         id,
         key: "listenForInput",
-        value
+        value,
       });
     },
 
@@ -79,14 +80,14 @@ export default {
       this.$modV.store.commit("midi/UPDATE_DEVICE", {
         id,
         key: "listenForClock",
-        value
+        value,
       });
     },
 
     tap() {
       tapTempo.tap();
-    }
-  }
+    },
+  },
 };
 </script>
 

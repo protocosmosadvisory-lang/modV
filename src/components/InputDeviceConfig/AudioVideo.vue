@@ -5,16 +5,14 @@
     v-searchTerms="{
       terms: ['audio', 'video', 'input'],
       title: 'Audio/Video Input Config',
-      type: 'Panel'
+      type: 'Panel',
     }"
   >
     <div>
       <grid class="borders">
         <c span="1..">
           <grid columns="4">
-            <c span="1">
-              Audio Input
-            </c>
+            <c span="1"> Audio Input </c>
             <c span="3">
               <Select
                 class="light"
@@ -25,8 +23,9 @@
                   v-for="input in audioInputs"
                   :key="input.deviceId"
                   :value="input.deviceId"
-                  >{{ input.label }}</option
                 >
+                  {{ input.label }}
+                </option>
               </Select>
             </c>
           </grid>
@@ -34,9 +33,7 @@
 
         <c span="1..">
           <grid columns="4">
-            <c span="1">
-              Audio Gain
-            </c>
+            <c span="1"> Audio Gain </c>
             <c span="2">
               <Range
                 :min="minGain"
@@ -51,9 +48,7 @@
 
         <c span="1..">
           <grid columns="4">
-            <c span="1">
-              Video Input
-            </c>
+            <c span="1"> Video Input </c>
             <c span="3">
               <Select
                 class="light"
@@ -64,8 +59,9 @@
                   v-for="input in videoInputs"
                   :key="input.deviceId"
                   :value="input.deviceId"
-                  >{{ input.label }}</option
                 >
+                  {{ input.label }}
+                </option>
               </Select>
             </c>
           </grid>
@@ -91,7 +87,7 @@ export default {
       iVBody: `Configure your audio and video inputs here. Click "Re-scan Devices" to scan for new sources.`,
       switchingAudio: false,
       switchingVideo: false,
-      gainRangeValue: 1
+      gainRangeValue: 1,
     };
   },
 
@@ -125,7 +121,7 @@ export default {
         this.switchingAudio = true;
         await this.$modV.setupMedia({ audioId: value });
         this.switchingAudio = false;
-      }
+      },
     },
 
     currentVideoSource: {
@@ -137,7 +133,7 @@ export default {
         this.switchingVideo = true;
         this.$modV.setupMedia({ videoId: value });
         this.switchingVideo = false;
-      }
+      },
     },
 
     maxGain() {
@@ -146,20 +142,20 @@ export default {
 
     minGain() {
       return 0;
-    }
+    },
   },
 
   methods: {
     renumerate() {
       this.$modV.enumerateDevices();
-    }
+    },
   },
 
   watch: {
     gainRangeValue(value) {
       this.$modV.gainNode.gain.value = value;
-    }
-  }
+    },
+  },
 };
 </script>
 

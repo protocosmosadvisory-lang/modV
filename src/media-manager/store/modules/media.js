@@ -8,12 +8,13 @@ function initialState() {
    */
   return {
     media: {},
-    path: null
+    path: null,
   };
 }
 
 const getters = {
-  projects: state => Object.keys(state.media).sort((a, b) => a.localeCompare(b))
+  projects: (state) =>
+    Object.keys(state.media).sort((a, b) => a.localeCompare(b)),
 };
 
 const actions = {
@@ -40,7 +41,7 @@ const actions = {
           await store.dispatch("media/addMedia", {
             project: projectKey,
             folder: folderKey,
-            item
+            item,
           });
         }
       }
@@ -51,7 +52,7 @@ const actions = {
 
   setMediaDirectoryPath({ commit }, { path }) {
     commit("SET_MEDIA_DIRECTORY_PATH", { path });
-  }
+  },
 };
 
 const mutations = {
@@ -88,7 +89,7 @@ const mutations = {
 
   SET_MEDIA_DIRECTORY_PATH(state, { path }) {
     state.path = path;
-  }
+  },
 };
 
 export default {
@@ -96,5 +97,5 @@ export default {
   state: initialState,
   getters,
   actions,
-  mutations
+  mutations,
 };

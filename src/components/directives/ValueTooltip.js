@@ -159,7 +159,7 @@ Vue.directive("tooltip", {
     if (!mouseover) {
       el.addEventListener("mousedown", mouseDown);
     } else {
-      el.addEventListener("mouseover", e => mouseOver(e, message));
+      el.addEventListener("mouseover", (e) => mouseOver(e, message));
       el.addEventListener("mouseout", mouseUp);
     }
   },
@@ -172,5 +172,5 @@ Vue.directive("tooltip", {
 
   unbind() {
     cleanUp();
-  }
+  },
 });
