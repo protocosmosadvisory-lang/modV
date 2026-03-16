@@ -426,12 +426,30 @@ export default {
       // B: blackout (hold to blackout, release to restore)
       if (key === "b") {
         deckMixer.setBlackout(true);
+        return;
+      }
+
+      // O: open output window
+      if (key === "o") {
+        this.openOutputWindow();
       }
     },
 
     handleGlobalKeyup(event) {
       if (event.key.toLowerCase() === "b") {
         deckMixer.setBlackout(false);
+      }
+    },
+
+    async openOutputWindow() {
+      if (!this.$modV) {
+        return;
+      }
+
+      try {
+        await this.$modV.store.dispatch("windows/createWindow");
+      } catch (e) {
+        console.warn("[App] Could not open output window:", e);
       }
     },
 
