@@ -9,6 +9,8 @@
  */
 
 const LOOP_MODES = ["loop", "ping-pong", "once", "hold"];
+const GALLERY_GROUP_NAME = "modV internal Gallery Group";
+const VIDEO_CLIP_MODULE_NAME = "VideoClip";
 
 class VideoClipPlayer {
   constructor() {
@@ -28,9 +30,62 @@ class VideoClipPlayer {
     return window.modV;
   }
 
+  /**
+   * Ensure the VideoClip module is present in at least one non-gallery group.
+   * If not, create an instance and add it to the first available group.
+   * Called lazily on first play so the user sees output without manual setup.
+   */
+  async _ensureVideoClipModule() {
+    if (!this.modV) {
+      return;
+    }
+
+    const workerStore = this.modV.store;
+    const groups = workerStore.state.groups.groups;
+
+    if (!groups || groups.length === 0) {
+      return;
+    }
+
+    // Check if VideoClip is already active in any non-gallery group
+    const activeModules = workerStore.state.modules.active || {};
+    const hasVideoClipActive = Object.values(activeModules).some(
+      (m) =>
+        m.meta && m.meta.name === VIDEO_CLIP_MODULE_NAME && !m.meta.isGallery
+    );
+
+    if (hasVideoClipActive) {
+      return;
+    }
+
+    // Find first non-gallery group
+    const targetGroup = groups.find((g) => g.name !== GALLERY_GROUP_NAME);
+    if (!targetGroup) {
+      return;
+    }
+
+    try {
+      const module = await workerStore.dispatch("modules/makeActiveModule", {
+        moduleName: VIDEO_CLIP_MODULE_NAME,
+      });
+
+      if (module && module.$id) {
+        workerStore.commit("groups/ADD_MODULE_TO_GROUP", {
+          moduleId: module.$id,
+          groupId: targetGroup.id,
+          position: targetGroup.modules ? targetGroup.modules.length : 0,
+        });
+      }
+    } catch (e) {
+      // Non-fatal — user can add manually
+      console.warn("[VideoClipPlayer] Could not auto-add VideoClip module:", e);
+    }
+  }
+
   /** Play a File or path string through the modV render pipeline. */
   async play(source, { loopMode = "loop", speed = 1.0 } = {}) {
     this.stop();
+    this._ensureVideoClipModule();
 
     if (!source) {
       return;

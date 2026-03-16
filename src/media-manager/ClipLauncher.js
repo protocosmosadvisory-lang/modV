@@ -188,6 +188,28 @@ class ClipLauncher {
     });
   }
 
+  updateSlotSettings(deck, row, col, { loopMode, speed } = {}) {
+    const normalizedDeck = normalizeDeck(deck);
+
+    store.commit("clip-launcher/UPDATE_SLOT_SETTINGS", {
+      deck: normalizedDeck,
+      row,
+      col,
+      loopMode,
+      speed,
+    });
+
+    const slot = this.getSlot(normalizedDeck, row, col);
+    this.emit("slot-settings-changed", {
+      deck: normalizedDeck,
+      row,
+      col,
+      slot,
+    });
+
+    return slot;
+  }
+
   setCrossfader(value) {
     store.commit("clip-launcher/SET_CROSSFADER", value);
     this.emit("deck-crossfade", this.state.crossfader);
