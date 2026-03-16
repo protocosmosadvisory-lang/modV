@@ -87,6 +87,18 @@
     >
       <header class="deck-header">
         <span class="deck-title">Deck A</span>
+        <div class="master-speed-btns">
+          <button
+            v-for="s in speedPresets"
+            :key="s.value"
+            type="button"
+            class="speed-preset-btn"
+            :class="{ 'speed-preset-active': masterSpeedA === s.value }"
+            @click="setMasterSpeed('A', s.value)"
+          >
+            {{ s.label }}
+          </button>
+        </div>
         <button
           type="button"
           class="sync-toggle midi-toggle"
@@ -136,6 +148,22 @@
 
     <section class="crossfader-column">
       <canvas ref="previewCanvas" class="output-preview"></canvas>
+
+      <!-- Row scene triggers: fire first loaded clip in each row across both decks -->
+      <div class="row-triggers">
+        <button
+          v-for="row in 8"
+          :key="row - 1"
+          type="button"
+          class="row-trigger-btn"
+          :class="{ 'row-trigger-active': isRowActive(row - 1) }"
+          :title="`Trigger row ${row} on both decks`"
+          @click="triggerRow(row - 1)"
+        >
+          {{ row }}
+        </button>
+      </div>
+
       <button
         class="sync-toggle"
         :class="{ 'sync-toggle-active': beatSyncMode === 'sync' }"
@@ -210,6 +238,18 @@
     >
       <header class="deck-header">
         <span class="deck-title">Deck B</span>
+        <div class="master-speed-btns">
+          <button
+            v-for="s in speedPresets"
+            :key="s.value"
+            type="button"
+            class="speed-preset-btn"
+            :class="{ 'speed-preset-active': masterSpeedB === s.value }"
+            @click="setMasterSpeed('B', s.value)"
+          >
+            {{ s.label }}
+          </button>
+        </div>
         <button
           type="button"
           class="sync-toggle midi-toggle"
@@ -335,6 +375,15 @@ export default {
       lfoRate: 0.5,
       lfoPhase: 0,
       lfoInterval: null,
+      masterSpeedA: 1.0,
+      masterSpeedB: 1.0,
+      speedPresets: [
+        { label: "¼", value: 0.25 },
+        { label: "½", value: 0.5 },
+        { label: "1×", value: 1.0 },
+        { label: "2×", value: 2.0 },
+        { label: "4×", value: 4.0 },
+      ],
     };
   },
 
@@ -701,6 +750,47 @@ export default {
       }
     },
 
+    setMasterSpeed(deck, speed) {
+      if (deck === "A") {
+        this.masterSpeedA = speed;
+      } else {
+        this.masterSpeedB = speed;
+      }
+
+      deckMixer.setMasterSpeed(deck, speed);
+    },
+
+    isRowActive(row) {
+      return ["A", "B"].some((deck) => {
+        const deckSlots = this.decks[deck]?.[row];
+
+        return deckSlots && deckSlots.some((slot) => slot.active);
+      });
+    },
+
+    triggerRow(row) {
+      const decks = ["A", "B"];
+
+      for (let i = 0, len = decks.length; i < len; i++) {
+        const deck = decks[i];
+        const deckSlots = this.decks[deck]?.[row];
+
+        if (!deckSlots) {
+          continue;
+        }
+
+        const firstLoaded = deckSlots.find(
+          (slot) => slot.source && slot.source.url
+        );
+
+        if (firstLoaded) {
+          const { row: r, col: c } = parseSlotId(firstLoaded.id);
+
+          clipLauncher.triggerClip(deck, r, c);
+        }
+      }
+    },
+
     toggleBeatSync() {
       const mode = this.beatSyncMode === "sync" ? "free" : "sync";
 
@@ -992,7 +1082,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .deck-title {
@@ -1425,6 +1516,79 @@ export default {
     background: rgba(124, 58, 255, 0.16);
     box-shadow: 0 0 0 rgba(124, 58, 255, 0.1);
   }
+}
+
+/* Row scene triggers */
+.row-triggers {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+
+.row-trigger-btn {
+  aspect-ratio: 1 / 1;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(36, 39, 47, 0.9);
+  color: rgba(255, 255, 255, 0.45);
+  border-radius: 5px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease,
+    box-shadow 80ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.row-trigger-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.row-trigger-btn:active {
+  transform: scale(0.92);
+}
+
+.row-trigger-active {
+  border-color: var(--grackle-accent, #00ff88);
+  color: var(--grackle-accent, #00ff88);
+  background: rgba(0, 255, 136, 0.1);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
+}
+
+/* Per-deck master speed presets */
+.master-speed-btns {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+  justify-content: center;
+}
+
+.speed-preset-btn {
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.speed-preset-btn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.speed-preset-active {
+  border-color: var(--grackle-accent, #00ff88);
+  color: var(--grackle-accent, #00ff88);
+  background: rgba(0, 255, 136, 0.08);
 }
 
 @media (max-width: 1100px) {

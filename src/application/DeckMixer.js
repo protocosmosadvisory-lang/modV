@@ -23,11 +23,35 @@ class DeckMixer {
   constructor() {
     this.playerA = new VideoClipPlayer();
     this.playerB = new VideoClipPlayer();
+    this._masterSpeedA = 1.0;
+    this._masterSpeedB = 1.0;
     this._canvas = null;
     this._ctx = null;
     this._stream = null;
     this._raf = null;
     this._active = false;
+  }
+
+  getMasterSpeed(deck) {
+    return deck === "A" ? this._masterSpeedA : this._masterSpeedB;
+  }
+
+  setMasterSpeed(deck, speed) {
+    const clamped = Math.max(0.1, Math.min(16, Number(speed) || 1));
+
+    if (deck === "A") {
+      this._masterSpeedA = clamped;
+
+      if (this.playerA._video) {
+        this.playerA._video.playbackRate = clamped;
+      }
+    } else {
+      this._masterSpeedB = clamped;
+
+      if (this.playerB._video) {
+        this.playerB._video.playbackRate = clamped;
+      }
+    }
   }
 
   get modV() {

@@ -139,9 +139,10 @@ class ClipLauncher {
     // Route the video source through the correct deck player
     const player =
       normalizedDeck === "A" ? deckMixer.playerA : deckMixer.playerB;
+    const masterSpeed = deckMixer.getMasterSpeed(normalizedDeck);
     player.play(slot.source, {
       loopMode: slot.loopMode || "loop",
-      speed: slot.speed || 1.0,
+      speed: (slot.speed || 1.0) * masterSpeed,
     });
 
     const activeSlot = this.getSlot(normalizedDeck, row, col);
