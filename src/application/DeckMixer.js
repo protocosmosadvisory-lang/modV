@@ -26,11 +26,59 @@ class DeckMixer {
     this._opacityA = 1.0;
     this._opacityB = 1.0;
     this.blendMode = "cross"; // cross | add | screen | multiply | overlay
+    this._fxA = { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0 };
+    this._fxB = { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0 };
     this._canvas = null;
     this._ctx = null;
     this._stream = null;
     this._raf = null;
     this._active = false;
+  }
+
+  setFx(deck, params) {
+    const target = deck === "A" ? this._fxA : this._fxB;
+
+    if (params.brightness !== undefined) {
+      target.brightness = Math.max(0, Math.min(4, Number(params.brightness)));
+    }
+
+    if (params.contrast !== undefined) {
+      target.contrast = Math.max(0, Math.min(4, Number(params.contrast)));
+    }
+
+    if (params.saturation !== undefined) {
+      target.saturation = Math.max(0, Math.min(4, Number(params.saturation)));
+    }
+
+    if (params.hue !== undefined) {
+      target.hue = Number(params.hue) % 360;
+    }
+  }
+
+  getFx(deck) {
+    return deck === "A" ? { ...this._fxA } : { ...this._fxB };
+  }
+
+  _buildFilter(fx) {
+    const parts = [];
+
+    if (fx.brightness !== 1.0) {
+      parts.push(`brightness(${fx.brightness.toFixed(2)})`);
+    }
+
+    if (fx.contrast !== 1.0) {
+      parts.push(`contrast(${fx.contrast.toFixed(2)})`);
+    }
+
+    if (fx.saturation !== 1.0) {
+      parts.push(`saturate(${fx.saturation.toFixed(2)})`);
+    }
+
+    if (fx.hue !== 0) {
+      parts.push(`hue-rotate(${Math.round(fx.hue)}deg)`);
+    }
+
+    return parts.length > 0 ? parts.join(" ") : "none";
   }
 
   setBlendMode(mode) {
@@ -119,49 +167,39 @@ class DeckMixer {
 
     ctx.clearRect(0, 0, w, h);
 
-    if (mode === "cross") {
-      // Standard alpha crossfade
-      const alphaA = Math.max(0, Math.min(1, (1 - cf) * this._opacityA));
-      const alphaB = Math.max(0, Math.min(1, cf * this._opacityB));
+    const alphaA = Math.max(0, Math.min(1, (1 - cf) * this._opacityA));
+    const alphaB = Math.max(0, Math.min(1, cf * this._opacityB));
+    const filterA = this._buildFilter(this._fxA);
+    const filterB = this._buildFilter(this._fxB);
 
-      if (this.playerA.canvas && this.playerA.isPlaying && alphaA > 0.001) {
-        ctx.globalAlpha = alphaA;
-        ctx.globalCompositeOperation = "source-over";
-        ctx.drawImage(this.playerA.canvas, 0, 0, w, h);
-      }
+    const compositeOp =
+      mode === "add"
+        ? "lighter"
+        : mode === "screen"
+        ? "screen"
+        : mode === "multiply"
+        ? "multiply"
+        : mode === "overlay"
+        ? "overlay"
+        : "source-over"; // cross uses source-over
 
-      if (this.playerB.canvas && this.playerB.isPlaying && alphaB > 0.001) {
-        ctx.globalAlpha = alphaB;
-        ctx.globalCompositeOperation = "source-over";
-        ctx.drawImage(this.playerB.canvas, 0, 0, w, h);
-      }
-    } else {
-      // Additive blend modes — both decks at full opacity, blended
-      const compositeOp =
-        mode === "add"
-          ? "lighter"
-          : mode === "screen"
-          ? "screen"
-          : mode === "multiply"
-          ? "multiply"
-          : "overlay";
-      const alphaA = Math.max(0, Math.min(1, (1 - cf) * this._opacityA));
-      const alphaB = Math.max(0, Math.min(1, cf * this._opacityB));
+    if (this.playerA.canvas && this.playerA.isPlaying && alphaA > 0.001) {
+      ctx.globalAlpha = alphaA;
+      ctx.filter = filterA;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.drawImage(this.playerA.canvas, 0, 0, w, h);
+    }
 
-      if (this.playerA.canvas && this.playerA.isPlaying) {
-        ctx.globalAlpha = alphaA;
-        ctx.globalCompositeOperation = "source-over";
-        ctx.drawImage(this.playerA.canvas, 0, 0, w, h);
-      }
-
-      if (this.playerB.canvas && this.playerB.isPlaying) {
-        ctx.globalAlpha = alphaB;
-        ctx.globalCompositeOperation = compositeOp;
-        ctx.drawImage(this.playerB.canvas, 0, 0, w, h);
-      }
+    if (this.playerB.canvas && this.playerB.isPlaying && alphaB > 0.001) {
+      ctx.globalAlpha = alphaB;
+      ctx.filter = filterB;
+      ctx.globalCompositeOperation =
+        mode === "cross" ? "source-over" : compositeOp;
+      ctx.drawImage(this.playerB.canvas, 0, 0, w, h);
     }
 
     ctx.globalAlpha = 1;
+    ctx.filter = "none";
     ctx.globalCompositeOperation = "source-over";
 
     this._raf = requestAnimationFrame(() => this._loop());

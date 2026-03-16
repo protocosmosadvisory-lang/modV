@@ -110,6 +110,15 @@
         </button>
         <button
           type="button"
+          class="deck-fx-toggle"
+          :class="{ 'deck-fx-open': showFxA }"
+          title="Toggle color effects"
+          @click="showFxA = !showFxA"
+        >
+          FX
+        </button>
+        <button
+          type="button"
           class="sync-toggle midi-toggle"
           :class="{ 'sync-toggle-active': midiLearnDeck === 'A' }"
           @click="toggleMidiLearnMode('A')"
@@ -117,6 +126,39 @@
           MIDI
         </button>
       </header>
+      <div v-if="showFxA" class="deck-fx-row">
+        <label class="fx-label">BRI</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="3"
+          step="0.05"
+          :value="fxA.brightness"
+          @input="updateFx('A', 'brightness', $event.target.value)"
+        />
+        <label class="fx-label">HUE</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="-180"
+          max="180"
+          step="1"
+          :value="fxA.hue"
+          @input="updateFx('A', 'hue', $event.target.value)"
+        />
+        <label class="fx-label">SAT</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="3"
+          step="0.05"
+          :value="fxA.saturation"
+          @input="updateFx('A', 'saturation', $event.target.value)"
+        />
+        <button class="fx-reset-btn" @click="resetFx('A')">↺</button>
+      </div>
       <div class="deck-grid">
         <button
           v-for="slot in flatDeckA"
@@ -285,6 +327,15 @@
         </button>
         <button
           type="button"
+          class="deck-fx-toggle"
+          :class="{ 'deck-fx-open': showFxB }"
+          title="Toggle color effects"
+          @click="showFxB = !showFxB"
+        >
+          FX
+        </button>
+        <button
+          type="button"
           class="sync-toggle midi-toggle"
           :class="{ 'sync-toggle-active': midiLearnDeck === 'B' }"
           @click="toggleMidiLearnMode('B')"
@@ -292,6 +343,39 @@
           MIDI
         </button>
       </header>
+      <div v-if="showFxB" class="deck-fx-row">
+        <label class="fx-label">BRI</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="3"
+          step="0.05"
+          :value="fxB.brightness"
+          @input="updateFx('B', 'brightness', $event.target.value)"
+        />
+        <label class="fx-label">HUE</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="-180"
+          max="180"
+          step="1"
+          :value="fxB.hue"
+          @input="updateFx('B', 'hue', $event.target.value)"
+        />
+        <label class="fx-label">SAT</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="3"
+          step="0.05"
+          :value="fxB.saturation"
+          @input="updateFx('B', 'saturation', $event.target.value)"
+        />
+        <button class="fx-reset-btn" @click="resetFx('B')">↺</button>
+      </div>
       <div class="deck-grid">
         <button
           v-for="slot in flatDeckB"
@@ -411,6 +495,10 @@ export default {
       masterSpeedA: 1.0,
       masterSpeedB: 1.0,
       blendMode: "cross",
+      showFxA: false,
+      showFxB: false,
+      fxA: { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0 },
+      fxB: { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0 },
       blendModes: [
         { label: "×fade", value: "cross" },
         { label: "add", value: "add" },
@@ -812,6 +900,31 @@ export default {
     setBlendMode(mode) {
       this.blendMode = mode;
       deckMixer.setBlendMode(mode);
+    },
+
+    updateFx(deck, param, rawValue) {
+      const value = parseFloat(rawValue);
+      const fx = deck === "A" ? this.fxA : this.fxB;
+
+      fx[param] = value;
+      deckMixer.setFx(deck, { [param]: value });
+    },
+
+    resetFx(deck) {
+      const defaults = {
+        brightness: 1.0,
+        contrast: 1.0,
+        saturation: 1.0,
+        hue: 0,
+      };
+
+      if (deck === "A") {
+        this.fxA = { ...defaults };
+      } else {
+        this.fxB = { ...defaults };
+      }
+
+      deckMixer.setFx(deck, defaults);
     },
 
     setMasterSpeed(deck, speed) {
@@ -1654,6 +1767,71 @@ export default {
   color: var(--grackle-accent, #00ff88);
   background: rgba(0, 255, 136, 0.1);
   box-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
+}
+
+/* Deck FX controls */
+.deck-fx-toggle {
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.deck-fx-toggle:hover {
+  border-color: rgba(255, 180, 60, 0.5);
+  color: rgba(255, 200, 80, 0.9);
+}
+
+.deck-fx-open {
+  border-color: rgba(255, 180, 60, 0.6);
+  color: rgba(255, 200, 80, 0.95);
+  background: rgba(255, 160, 40, 0.1);
+}
+
+.deck-fx-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 2px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 4px;
+}
+
+.fx-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 200, 80, 0.7);
+  white-space: nowrap;
+  min-width: 20px;
+}
+
+.fx-slider {
+  flex: 1;
+  min-width: 0;
+  height: 3px;
+  accent-color: rgba(255, 180, 60, 0.8);
+}
+
+.fx-reset-btn {
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.fx-reset-btn:hover {
+  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Deck stop button */
