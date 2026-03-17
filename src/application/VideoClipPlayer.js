@@ -173,6 +173,57 @@ export class VideoClipPlayer {
     }
   }
 
+  /**
+   * Play a live MediaStream (e.g. webcam) through this player's canvas.
+   * Behaves like play() but skips BPM/loop logic — just draws frames.
+   */
+  async playStream(stream) {
+    this.stop();
+
+    if (!stream) {
+      return;
+    }
+
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.autoplay = true;
+    video.srcObject = stream;
+
+    await new Promise((resolve, reject) => {
+      video.addEventListener("loadedmetadata", resolve, { once: true });
+      video.addEventListener("error", reject, { once: true });
+    });
+
+    this._video = video;
+    this._camStream = stream;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext("2d", { willReadFrequently: false });
+
+    this._canvas = canvas;
+    this._ctx = ctx;
+
+    video.play().catch(() => {});
+    this._active = true;
+
+    const drawFrame = () => {
+      if (!this._active) {
+        return;
+      }
+
+      if (video.readyState >= 2) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
+
+      this._raf = requestAnimationFrame(drawFrame);
+    };
+
+    drawFrame();
+  }
+
   stop() {
     this._active = false;
 
@@ -183,9 +234,20 @@ export class VideoClipPlayer {
 
     if (this._video) {
       this._video.pause();
+      this._video.srcObject = null;
       this._video.src = "";
       this._video.load();
       this._video = null;
+    }
+
+    if (this._camStream) {
+      const tracks = this._camStream.getTracks();
+
+      for (let i = 0, len = tracks.length; i < len; i++) {
+        tracks[i].stop();
+      }
+
+      this._camStream = null;
     }
 
     if (this._objectURL) {

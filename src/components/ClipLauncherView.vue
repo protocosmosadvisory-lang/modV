@@ -140,6 +140,15 @@
         </button>
         <button
           type="button"
+          class="deck-cam-btn"
+          :class="{ 'deck-cam-active': camA }"
+          title="Webcam live input for Deck A"
+          @click="toggleCam('A')"
+        >
+          CAM
+        </button>
+        <button
+          type="button"
           class="deck-stutter-btn"
           :class="{ 'deck-stutter-active': stutteringDeck === 'A' }"
           title="Stutter — hold to loop current frame rapidly"
@@ -579,6 +588,15 @@
         </button>
         <button
           type="button"
+          class="deck-cam-btn"
+          :class="{ 'deck-cam-active': camB }"
+          title="Webcam live input for Deck B"
+          @click="toggleCam('B')"
+        >
+          CAM
+        </button>
+        <button
+          type="button"
           class="deck-stutter-btn"
           :class="{ 'deck-stutter-active': stutteringDeck === 'B' }"
           title="Stutter — hold to loop current frame rapidly"
@@ -863,6 +881,8 @@ export default {
       masterBrightness: 1.0,
       blackoutOn: false,
       whiteoutOn: false,
+      camA: false,
+      camB: false,
       showFxA: false,
       showFxB: false,
       fxA: {
@@ -1309,6 +1329,12 @@ export default {
     stopDeck(deck) {
       const player = deck === "A" ? deckMixer.playerA : deckMixer.playerB;
       player.stop();
+
+      if (deck === "A") {
+        this.camA = false;
+      } else {
+        this.camB = false;
+      }
 
       // Passing row/col of -1 sets all slots in this deck to active=false
       this.$store.commit("clip-launcher/TRIGGER_CLIP", {
@@ -1815,6 +1841,36 @@ export default {
         ) {
           this.pendingMidiSlot = null;
         }
+      }
+    },
+
+    async toggleCam(deck) {
+      const isOn = deck === "A" ? this.camA : this.camB;
+      const player = deck === "A" ? deckMixer.playerA : deckMixer.playerB;
+
+      if (isOn) {
+        player.stop();
+        if (deck === "A") {
+          this.camA = false;
+        } else {
+          this.camB = false;
+        }
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        await player.playStream(stream);
+
+        if (deck === "A") {
+          this.camA = true;
+        } else {
+          this.camB = true;
+        }
+      } catch (err) {
+        console.warn("[ClipLauncher] Webcam access denied:", err);
       }
     },
 
@@ -2686,6 +2742,44 @@ export default {
   }
   50% {
     box-shadow: 0 0 18px rgba(255, 200, 64, 0.4);
+  }
+}
+
+/* Webcam button */
+.deck-cam-btn {
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.deck-cam-btn:hover {
+  border-color: rgba(0, 220, 255, 0.5);
+  color: rgba(0, 235, 255, 0.8);
+}
+
+.deck-cam-active {
+  border-color: #00ddff;
+  color: #00ddff;
+  background: rgba(0, 200, 255, 0.1);
+  box-shadow: 0 0 12px rgba(0, 200, 255, 0.25);
+  animation: cam-pulse 2s ease-in-out infinite;
+}
+
+@keyframes cam-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(0, 200, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(0, 200, 255, 0.5);
   }
 }
 
