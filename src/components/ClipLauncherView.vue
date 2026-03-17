@@ -410,15 +410,26 @@
         ⬛ BLACK
       </button>
 
-      <button
-        class="sync-toggle beat-flash-toggle"
-        :class="{ 'sync-toggle-active': beatFlashEnabled }"
-        type="button"
-        title="Beat-reactive brightness flash on kick"
-        @click="toggleBeatFlash"
-      >
-        FLASH
-      </button>
+      <div class="beat-fx-row">
+        <button
+          class="sync-toggle beat-flash-toggle"
+          :class="{ 'sync-toggle-active': beatFlashEnabled }"
+          type="button"
+          title="Beat-reactive brightness flash on kick"
+          @click="toggleBeatFlash"
+        >
+          FLASH
+        </button>
+        <button
+          class="sync-toggle beat-zoom-toggle"
+          :class="{ 'sync-toggle-active': beatZoomEnabled }"
+          type="button"
+          title="Beat-reactive zoom pulse on kick"
+          @click="toggleBeatZoom"
+        >
+          ZOOM
+        </button>
+      </div>
 
       <button
         class="sync-toggle lfo-toggle"
@@ -725,6 +736,7 @@ export default {
       masterSpeedB: 1.0,
       blendMode: "cross",
       beatFlashEnabled: false,
+      beatZoomEnabled: false,
       blackoutOn: false,
       showFxA: false,
       showFxB: false,
@@ -1171,6 +1183,11 @@ export default {
     toggleBeatFlash() {
       this.beatFlashEnabled = !this.beatFlashEnabled;
       deckMixer.beatFlashEnabled = this.beatFlashEnabled;
+    },
+
+    toggleBeatZoom() {
+      this.beatZoomEnabled = !this.beatZoomEnabled;
+      deckMixer.beatZoomEnabled = this.beatZoomEnabled;
     },
 
     setBlendMode(mode) {
@@ -2458,6 +2475,17 @@ export default {
   border-color: #ffd740;
   color: #ffd740;
   background: rgba(255, 215, 64, 0.12);
+}
+
+/* Beat effects row (flash + zoom side by side) */
+.beat-fx-row {
+  display: flex;
+  gap: 4px;
+}
+
+.beat-fx-row .sync-toggle {
+  flex: 1;
+  padding: 6px 4px;
 }
 
 /* Solo deck buttons */

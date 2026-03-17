@@ -41,6 +41,11 @@ class DeckMixer {
     this._kickFlash = 0;
     this._lastKick = false;
 
+    // Beat-reactive zoom
+    this.beatZoomEnabled = false;
+    this.beatZoomIntensity = 0.06; // max scale delta on kick (e.g. 0.06 = 6%)
+    this._zoomScale = 0; // additive zoom above 1.0, decays to 0
+
     // Master blackout (0 = full black, 1 = normal)
     this._masterOpacity = 1.0;
     this._targetMasterOpacity = 1.0;
@@ -195,21 +200,33 @@ class DeckMixer {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Beat-reactive flash: detect rising edge on beats.kick
-    if (this.beatFlashEnabled) {
-      const kick = Boolean(window.modV?.store?.state?.beats?.kick);
+    // Beat-reactive flash + zoom: detect rising edge on beats.kick
+    const kick = Boolean(window.modV?.store?.state?.beats?.kick);
+    const risingEdge = kick && !this._lastKick;
+    this._lastKick = kick;
 
-      if (kick && !this._lastKick) {
+    if (this.beatFlashEnabled) {
+      if (risingEdge) {
         this._kickFlash = 1.0;
       }
 
-      this._lastKick = kick;
       this._kickFlash *= 0.82; // exponential decay (~10 frames to near-zero at 60fps)
     } else {
       this._kickFlash = 0;
     }
 
+    if (this.beatZoomEnabled) {
+      if (risingEdge) {
+        this._zoomScale = 1.0;
+      }
+
+      this._zoomScale *= 0.78; // slightly faster decay for snappy zoom
+    } else {
+      this._zoomScale = 0;
+    }
+
     const flashBoost = this._kickFlash * this.beatFlashIntensity;
+    const zoomDelta = this._zoomScale * this.beatZoomIntensity; // e.g. 0.06
 
     const alphaA = Math.max(0, Math.min(1, (1 - cf) * this._opacityA));
     const alphaB = Math.max(0, Math.min(1, cf * this._opacityB));
@@ -238,11 +255,18 @@ class DeckMixer {
         ? "overlay"
         : "source-over"; // cross uses source-over
 
+    // Compute scaled draw region for beat zoom (centered)
+    const scale = 1 + zoomDelta;
+    const zx = (w - w * scale) / 2;
+    const zy = (h - h * scale) / 2;
+    const zw = w * scale;
+    const zh = h * scale;
+
     if (this.playerA.canvas && this.playerA.isPlaying && alphaA > 0.001) {
       ctx.globalAlpha = alphaA;
       ctx.filter = filterA;
       ctx.globalCompositeOperation = "source-over";
-      ctx.drawImage(this.playerA.canvas, 0, 0, w, h);
+      ctx.drawImage(this.playerA.canvas, zx, zy, zw, zh);
     }
 
     if (this.playerB.canvas && this.playerB.isPlaying && alphaB > 0.001) {
@@ -250,7 +274,7 @@ class DeckMixer {
       ctx.filter = filterB;
       ctx.globalCompositeOperation =
         mode === "cross" ? "source-over" : compositeOp;
-      ctx.drawImage(this.playerB.canvas, 0, 0, w, h);
+      ctx.drawImage(this.playerB.canvas, zx, zy, zw, zh);
     }
 
     // Animate master opacity toward target (smooth blackout/fadein)
