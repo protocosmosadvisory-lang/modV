@@ -137,7 +137,7 @@
                 <kbd>B</kbd><span>Blackout (hold)</span>
               </div>
               <div class="shortcut-row">
-                <kbd>W</kbd><span>Whiteout (hold)</span>
+                <kbd>`</kbd><span>Whiteout (hold)</span>
               </div>
               <div class="shortcut-row">
                 <kbd>O</kbd><span>Open output window</span>
@@ -502,9 +502,10 @@ export default {
         this.openOutputWindow();
       }
 
-      // W: whiteout (hold)
-      if (key === "w") {
+      // ` (backtick): whiteout (hold) — W conflicts with Q-I row shortcut
+      if (event.key === "`") {
         deckMixer.setWhiteout(true);
+        return;
       }
 
       // ?: toggle keyboard shortcuts overlay
@@ -520,7 +521,7 @@ export default {
         deckMixer.setBlackout(false);
       }
 
-      if (key === "w") {
+      if (event.key === "`") {
         deckMixer.setWhiteout(false);
       }
     },

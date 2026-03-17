@@ -414,7 +414,7 @@
           class="whiteout-btn"
           :class="{ 'whiteout-active': whiteoutOn }"
           type="button"
-          title="Whiteout (hold W or click)"
+          title="Whiteout (hold ` or click)"
           @mousedown="setWhiteout(true)"
           @mouseup="setWhiteout(false)"
           @mouseleave="setWhiteout(false)"
