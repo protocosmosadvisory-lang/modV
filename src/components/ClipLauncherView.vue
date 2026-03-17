@@ -229,6 +229,16 @@
           :value="opacityA"
           @input="setDeckOpacity('A', $event.target.value)"
         />
+        <label class="fx-label">BLR</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="20"
+          step="0.5"
+          :value="fxA.blur"
+          @input="updateFx('A', 'blur', $event.target.value)"
+        />
         <button class="fx-reset-btn" @click="resetFx('A')">↺</button>
       </div>
       <div class="deck-grid">
@@ -395,6 +405,24 @@
         :value="crossfader"
         @input="setCrossfader($event.target.value)"
       />
+      <!-- Master brightness -->
+      <div class="master-brightness-row">
+        <label class="master-brightness-label">
+          BRT {{ Math.round(masterBrightness * 100) }}%
+        </label>
+        <input
+          type="range"
+          class="master-brightness-slider"
+          min="0"
+          max="2"
+          step="0.01"
+          :value="masterBrightness"
+          @input="setMasterBrightness($event.target.value)"
+          @dblclick="resetMasterBrightness"
+          title="Master brightness (double-click to reset)"
+        />
+      </div>
+
       <!-- Blackout / Whiteout -->
       <div class="blackout-row">
         <button
@@ -445,6 +473,16 @@
           ZOOM
         </button>
       </div>
+
+      <!-- PANIC: stop everything, reset all effects -->
+      <button
+        type="button"
+        class="panic-btn"
+        title="PANIC — stop all playback and reset effects"
+        @click="panic"
+      >
+        !! PANIC !!
+      </button>
 
       <button
         class="sync-toggle lfo-toggle"
@@ -600,6 +638,16 @@
           :value="opacityB"
           @input="setDeckOpacity('B', $event.target.value)"
         />
+        <label class="fx-label">BLR</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="20"
+          step="0.5"
+          :value="fxB.blur"
+          @input="updateFx('B', 'blur', $event.target.value)"
+        />
         <button class="fx-reset-btn" @click="resetFx('B')">↺</button>
       </div>
       <div class="deck-grid">
@@ -752,12 +800,13 @@ export default {
       blendMode: "cross",
       beatFlashEnabled: false,
       beatZoomEnabled: false,
+      masterBrightness: 1.0,
       blackoutOn: false,
       whiteoutOn: false,
       showFxA: false,
       showFxB: false,
-      fxA: { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0 },
-      fxB: { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0 },
+      fxA: { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0, blur: 0 },
+      fxB: { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0, blur: 0 },
       blendModes: [
         { label: "×fade", value: "cross" },
         { label: "add", value: "add" },
@@ -1211,6 +1260,62 @@ export default {
       deckMixer.beatZoomEnabled = this.beatZoomEnabled;
     },
 
+    setMasterBrightness(rawValue) {
+      const value = Math.max(0, Math.min(2, parseFloat(rawValue) || 1));
+      this.masterBrightness = value;
+      deckMixer.setMasterBrightness(value);
+    },
+
+    resetMasterBrightness() {
+      this.setMasterBrightness(1.0);
+    },
+
+    panic() {
+      // Stop both decks
+      this.stopDeck("A");
+      this.stopDeck("B");
+
+      // Reset all FX to defaults
+      this.resetFx("A");
+      this.resetFx("B");
+
+      // Reset opacity
+      this.opacityA = 1.0;
+      this.opacityB = 1.0;
+      deckMixer.setOpacity("A", 1.0);
+      deckMixer.setOpacity("B", 1.0);
+
+      // Reset master brightness
+      this.setMasterBrightness(1.0);
+
+      // Clear blackout / whiteout
+      this.setBlackout(false);
+      this.setWhiteout(false);
+
+      // Stop stutter
+      this.stopStutter();
+
+      // Disable auto-trigger
+      this.autoTriggerA = false;
+      this.autoTriggerB = false;
+
+      // Disable beat effects
+      this.beatFlashEnabled = false;
+      this.beatZoomEnabled = false;
+      deckMixer.beatFlashEnabled = false;
+      deckMixer.beatZoomEnabled = false;
+
+      // Reset crossfader to center
+      clipLauncher.setCrossfader(0.5);
+
+      // Reset blend mode
+      this.blendMode = "cross";
+      deckMixer.setBlendMode("cross");
+
+      // Stop LFO
+      this.stopLfo();
+    },
+
     setBlendMode(mode) {
       this.blendMode = mode;
       deckMixer.setBlendMode(mode);
@@ -1230,6 +1335,7 @@ export default {
         contrast: 1.0,
         saturation: 1.0,
         hue: 0,
+        blur: 0,
       };
 
       if (deck === "A") {
@@ -2539,6 +2645,56 @@ export default {
   border-color: #ffd740;
   color: #ffd740;
   background: rgba(255, 215, 64, 0.12);
+}
+
+/* Master brightness */
+.master-brightness-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.master-brightness-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  min-width: 40px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.master-brightness-slider {
+  flex: 1;
+  accent-color: rgba(255, 255, 255, 0.6);
+}
+
+/* PANIC button */
+.panic-btn {
+  padding: 7px 10px;
+  border: 2px solid rgba(255, 60, 60, 0.4);
+  border-radius: 8px;
+  background: rgba(255, 40, 40, 0.07);
+  color: rgba(255, 80, 80, 0.65);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.panic-btn:hover {
+  border-color: rgba(255, 60, 60, 0.8);
+  color: rgba(255, 80, 80, 1);
+  background: rgba(255, 40, 40, 0.16);
+  box-shadow: 0 0 16px rgba(255, 40, 40, 0.2);
+}
+
+.panic-btn:active {
+  transform: scale(0.96);
+  border-color: #ff3c3c;
+  box-shadow: 0 0 24px rgba(255, 40, 40, 0.4);
 }
 
 /* Beat effects row (flash + zoom side by side) */

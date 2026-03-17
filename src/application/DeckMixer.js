@@ -26,8 +26,21 @@ class DeckMixer {
     this._opacityA = 1.0;
     this._opacityB = 1.0;
     this.blendMode = "cross"; // cross | add | screen | multiply | overlay
-    this._fxA = { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0 };
-    this._fxB = { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0 };
+    this._fxA = {
+      brightness: 1.0,
+      contrast: 1.0,
+      saturation: 1.0,
+      hue: 0,
+      blur: 0,
+    };
+    this._fxB = {
+      brightness: 1.0,
+      contrast: 1.0,
+      saturation: 1.0,
+      hue: 0,
+      blur: 0,
+    };
+    this._masterBrightness = 1.0;
     this._canvas = null;
     this._ctx = null;
     this._stream = null;
@@ -89,6 +102,14 @@ class DeckMixer {
     if (params.hue !== undefined) {
       target.hue = Number(params.hue) % 360;
     }
+
+    if (params.blur !== undefined) {
+      target.blur = Math.max(0, Math.min(20, Number(params.blur) || 0));
+    }
+  }
+
+  setMasterBrightness(value) {
+    this._masterBrightness = Math.max(0, Math.min(2, Number(value) || 1));
   }
 
   getFx(deck) {
@@ -112,6 +133,10 @@ class DeckMixer {
 
     if (fx.hue !== 0) {
       parts.push(`hue-rotate(${Math.round(fx.hue)}deg)`);
+    }
+
+    if (fx.blur > 0) {
+      parts.push(`blur(${fx.blur.toFixed(1)}px)`);
     }
 
     return parts.length > 0 ? parts.join(" ") : "none";
@@ -318,6 +343,21 @@ class DeckMixer {
       ctx.globalAlpha = this._masterWhite;
       ctx.filter = "none";
       ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    // Master brightness: dim or boost the whole output
+    if (this._masterBrightness < 0.999) {
+      ctx.globalAlpha = 1 - this._masterBrightness;
+      ctx.filter = "none";
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, w, h);
+    } else if (this._masterBrightness > 1.001) {
+      ctx.globalAlpha = this._masterBrightness - 1;
+      ctx.filter = "none";
+      ctx.globalCompositeOperation = "lighter";
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, w, h);
     }
