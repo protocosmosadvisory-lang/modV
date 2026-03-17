@@ -700,6 +700,31 @@
         >
           STRB
         </button>
+        <button
+          class="sync-toggle beat-glitch-toggle"
+          :class="{ 'sync-toggle-active': glitchEnabled }"
+          type="button"
+          title="Glitch — random horizontal slice displacement"
+          @click="toggleGlitch"
+        >
+          GLCH
+        </button>
+      </div>
+      <!-- Pixelate slider -->
+      <div v-if="pixelate > 1 || true" class="pixelate-row">
+        <span class="pixelate-label"
+          >PIX {{ pixelate > 1 ? pixelate + "×" : "OFF" }}</span
+        >
+        <input
+          type="range"
+          class="pixelate-slider"
+          min="1"
+          max="40"
+          step="1"
+          :value="pixelate"
+          @input="setPixelate($event.target.value)"
+          title="Pixelate master output (1 = off)"
+        />
       </div>
       <div v-if="strobeEnabled" class="strobe-hz-row">
         <span class="strobe-hz-label">{{ strobeHz }} Hz</span>
@@ -1388,6 +1413,9 @@ export default {
       quantizeB: false,
       chromaA: 0,
       chromaB: 0,
+      pixelate: 1,
+      glitchEnabled: false,
+      glitchIntensity: 0.4,
       strobeEnabled: false,
       strobeHz: 8,
       masterContrast: 1.0,
@@ -2117,6 +2145,12 @@ export default {
       this.chromaB = 0;
       deckMixer.setChroma("A", 0);
       deckMixer.setChroma("B", 0);
+
+      // Reset pixelate + glitch
+      this.pixelate = 1;
+      deckMixer.setPixelate(1);
+      this.glitchEnabled = false;
+      deckMixer.setGlitch(false);
 
       // Reset strobe
       this.strobeEnabled = false;
@@ -2936,6 +2970,16 @@ export default {
     setMasterHueSpin(value) {
       this.masterHueSpin = parseFloat(value);
       deckMixer._masterHueSpin = this.masterHueSpin;
+    },
+
+    setPixelate(value) {
+      this.pixelate = parseInt(value, 10);
+      deckMixer.setPixelate(this.pixelate);
+    },
+
+    toggleGlitch() {
+      this.glitchEnabled = !this.glitchEnabled;
+      deckMixer.setGlitch(this.glitchEnabled, this.glitchIntensity);
     },
 
     toggleStrobe() {
@@ -4323,6 +4367,33 @@ export default {
   background: rgba(255, 153, 0, 0.18);
   border-color: #ff9900;
   color: #ffb84d;
+}
+
+.beat-glitch-toggle.sync-toggle-active {
+  background: rgba(255, 60, 200, 0.18);
+  border-color: #ff3cc8;
+  color: #ff80dd;
+}
+
+.pixelate-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pixelate-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pixelate-slider {
+  flex: 1;
+  height: 3px;
+  accent-color: #ff3cc8;
 }
 
 /* Master output FX */

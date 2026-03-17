@@ -121,6 +121,16 @@ class DeckMixer {
     this._masterHue = 0;
     this._masterHueSpin = 0; // degrees per second, continuously rotates hue
 
+    // Pixelate (1 = off, >1 = block size in pixels)
+    this._pixelate = 1;
+    this._pixCanvas = null;
+    this._pixCtx = null;
+
+    // Glitch effect
+    this.glitchEnabled = false;
+    this.glitchIntensity = 0.4; // 0–1
+    this._glitchFrame = 0;
+
     // Second-pass output canvas (master FX applied here)
     this._outCanvas = null;
     this._outCtx = null;
@@ -495,6 +505,12 @@ class DeckMixer {
     this._canvas.height = 720;
     this._ctx = this._canvas.getContext("2d");
 
+    // Pixelation intermediate canvas
+    this._pixCanvas = document.createElement("canvas");
+    this._pixCanvas.width = 1280;
+    this._pixCanvas.height = 720;
+    this._pixCtx = this._pixCanvas.getContext("2d");
+
     // Final output canvas — master FX (contrast/saturation/hue) applied here
     this._outCanvas = document.createElement("canvas");
     this._outCanvas.width = 1280;
@@ -741,6 +757,23 @@ class DeckMixer {
         (((this._masterHue + this._masterHueSpin / 60) % 360) + 360) % 360;
     }
 
+    // Glitch bands: random horizontal slice displacement on comp canvas
+    this._glitchFrame = (this._glitchFrame + 1) % 3;
+    if (this.glitchEnabled && this._glitchFrame === 0) {
+      const numBands = 2 + Math.floor(Math.random() * 3);
+      for (let g = 0; g < numBands; g++) {
+        const gy = Math.floor(Math.random() * h);
+        const gh = 4 + Math.floor(Math.random() * 20);
+        const gx = (Math.random() - 0.5) * w * this.glitchIntensity;
+        ctx.save();
+        ctx.globalAlpha = 0.7;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.filter = "none";
+        ctx.drawImage(this._canvas, 0, gy, w, gh, gx, gy, w, gh);
+        ctx.restore();
+      }
+    }
+
     // Master output FX pass: composite canvas → output canvas with CSS filter
     if (this._outCtx) {
       const outCtx = this._outCtx;
@@ -748,9 +781,26 @@ class DeckMixer {
       outCtx.clearRect(0, 0, w, h);
       outCtx.globalAlpha = 1;
       outCtx.globalCompositeOperation = "source-over";
-      outCtx.filter = masterFilter;
-      outCtx.drawImage(this._canvas, 0, 0);
-      outCtx.filter = "none";
+
+      if (this._pixelate > 1 && this._pixCtx) {
+        // Pixelate: draw comp to small canvas then scale up without smoothing
+        const pw = Math.max(1, Math.floor(w / this._pixelate));
+        const ph = Math.max(1, Math.floor(h / this._pixelate));
+        const pixCtx = this._pixCtx;
+        pixCtx.imageSmoothingEnabled = false;
+        pixCtx.filter = masterFilter;
+        pixCtx.clearRect(0, 0, w, h);
+        pixCtx.drawImage(this._canvas, 0, 0, pw, ph);
+        pixCtx.filter = "none";
+        outCtx.filter = "none";
+        outCtx.imageSmoothingEnabled = false;
+        outCtx.drawImage(this._pixCanvas, 0, 0, pw, ph, 0, 0, w, h);
+        outCtx.imageSmoothingEnabled = true;
+      } else {
+        outCtx.filter = masterFilter;
+        outCtx.drawImage(this._canvas, 0, 0);
+        outCtx.filter = "none";
+      }
     }
 
     this._raf = requestAnimationFrame(() => this._loop());
@@ -785,6 +835,8 @@ class DeckMixer {
     this._ctx = null;
     this._outCanvas = null;
     this._outCtx = null;
+    this._pixCanvas = null;
+    this._pixCtx = null;
     this._track = null;
 
     if (this.modV) {
@@ -801,6 +853,18 @@ class DeckMixer {
     return (
       this._mediaRecorder !== null && this._mediaRecorder.state === "recording"
     );
+  }
+
+  setPixelate(value) {
+    this._pixelate = Math.max(1, Math.min(40, Number(value) || 1));
+  }
+
+  setGlitch(enabled, intensity) {
+    this.glitchEnabled = Boolean(enabled);
+
+    if (intensity !== undefined) {
+      this.glitchIntensity = Math.max(0, Math.min(1, Number(intensity) || 0.4));
+    }
   }
 
   setStrobe(enabled, hz) {
