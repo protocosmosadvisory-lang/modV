@@ -180,6 +180,32 @@
         </button>
         <button
           type="button"
+          class="deck-ramp-btn"
+          :class="{ 'deck-ramp-active': rampingDeck === 'A' && rampDir > 0 }"
+          title="Speed ramp UP — hold to accelerate"
+          @mousedown.prevent="startRamp('A', 1)"
+          @mouseup="stopRamp"
+          @mouseleave="stopRamp"
+          @touchstart.prevent="startRamp('A', 1)"
+          @touchend.prevent="stopRamp"
+        >
+          R+
+        </button>
+        <button
+          type="button"
+          class="deck-ramp-btn"
+          :class="{ 'deck-ramp-active': rampingDeck === 'A' && rampDir < 0 }"
+          title="Speed ramp DOWN — hold to decelerate"
+          @mousedown.prevent="startRamp('A', -1)"
+          @mouseup="stopRamp"
+          @mouseleave="stopRamp"
+          @touchstart.prevent="startRamp('A', -1)"
+          @touchend.prevent="stopRamp"
+        >
+          R-
+        </button>
+        <button
+          type="button"
           class="deck-fx-toggle"
           :class="{ 'deck-fx-open': showFxA }"
           title="Toggle color effects"
@@ -398,6 +424,20 @@
           @click="triggerRow(row - 1)"
         >
           {{ row }}
+        </button>
+      </div>
+
+      <!-- Column triggers: fire clip at column across both decks -->
+      <div class="col-triggers">
+        <button
+          v-for="col in 8"
+          :key="col - 1"
+          type="button"
+          class="col-trigger-btn"
+          :title="`Trigger column ${col} on both decks`"
+          @click="triggerCol(col - 1)"
+        >
+          ▾{{ col }}
         </button>
       </div>
 
@@ -849,6 +889,32 @@
         </button>
         <button
           type="button"
+          class="deck-ramp-btn"
+          :class="{ 'deck-ramp-active': rampingDeck === 'B' && rampDir > 0 }"
+          title="Speed ramp UP — hold to accelerate"
+          @mousedown.prevent="startRamp('B', 1)"
+          @mouseup="stopRamp"
+          @mouseleave="stopRamp"
+          @touchstart.prevent="startRamp('B', 1)"
+          @touchend.prevent="stopRamp"
+        >
+          R+
+        </button>
+        <button
+          type="button"
+          class="deck-ramp-btn"
+          :class="{ 'deck-ramp-active': rampingDeck === 'B' && rampDir < 0 }"
+          title="Speed ramp DOWN — hold to decelerate"
+          @mousedown.prevent="startRamp('B', -1)"
+          @mouseup="stopRamp"
+          @mouseleave="stopRamp"
+          @touchstart.prevent="startRamp('B', -1)"
+          @touchend.prevent="stopRamp"
+        >
+          R-
+        </button>
+        <button
+          type="button"
           class="deck-fx-toggle"
           :class="{ 'deck-fx-open': showFxB }"
           title="Toggle color effects"
@@ -1180,6 +1246,8 @@ export default {
       ],
       trailEnabled: false,
       trailDecay: 0.85,
+      rampingDeck: null,
+      rampDir: 0,
       strobeEnabled: false,
       strobeHz: 8,
       masterContrast: 1.0,
@@ -1254,6 +1322,7 @@ export default {
     this._presetLongPressIndex = null;
     this._autoCfRaf = null;
     this._recordInterval = null;
+    this._rampInterval = null;
     this._beatUnsubscribe = BeatSync.on("beat", () => this.onAutoTriggerBeat());
     this.lastKickState = Boolean(this.$modV?.store?.state?.beats?.kick);
     this.beatPollInterval = setInterval(this.pollBeatState, 1000 / 60);
@@ -1311,6 +1380,8 @@ export default {
       clearInterval(this._recordInterval);
       this._recordInterval = null;
     }
+
+    this.stopRamp();
   },
 
   computed: {
@@ -1737,8 +1808,9 @@ export default {
       this.setBlackout(false);
       this.setWhiteout(false);
 
-      // Stop stutter
+      // Stop stutter + ramp
       this.stopStutter();
+      this.stopRamp();
 
       // Disable auto-trigger
       this.autoTriggerA = false;
@@ -1857,6 +1929,31 @@ export default {
       deckMixer.setMasterSpeed(deck, speed);
     },
 
+    startRamp(deck, dir) {
+      this.stopRamp();
+      this.rampingDeck = deck;
+      this.rampDir = dir;
+      // Multiply speed by 1.015 or 0.985 every 50ms (~12× faster/slower per second)
+      this._rampInterval = setInterval(() => {
+        const current = deck === "A" ? this.masterSpeedA : this.masterSpeedB;
+        const next =
+          dir > 0
+            ? Math.min(32, current * 1.015)
+            : Math.max(0.05, current * 0.985);
+        this.setMasterSpeed(deck, next);
+      }, 50);
+    },
+
+    stopRamp() {
+      if (this._rampInterval) {
+        clearInterval(this._rampInterval);
+        this._rampInterval = null;
+      }
+
+      this.rampingDeck = null;
+      this.rampDir = 0;
+    },
+
     isRowActive(row) {
       return ["A", "B"].some((deck) => {
         const deckSlots = this.decks[deck]?.[row];
@@ -1884,6 +1981,30 @@ export default {
           const { row: r, col: c } = parseSlotId(firstLoaded.id);
 
           clipLauncher.triggerClip(deck, r, c);
+        }
+      }
+    },
+
+    triggerCol(col) {
+      // Fire clip at column `col` from the first row that has something loaded
+      // in that column, for each deck independently
+      const decks = ["A", "B"];
+
+      for (let di = 0, dlen = decks.length; di < dlen; di++) {
+        const deck = decks[di];
+        const deckRows = this.decks[deck];
+
+        if (!deckRows) {
+          continue;
+        }
+
+        for (let r = 0; r < deckRows.length; r++) {
+          const slot = deckRows[r]?.[col];
+
+          if (slot && slot.source && slot.source.url) {
+            clipLauncher.triggerClip(deck, r, col);
+            break;
+          }
         }
       }
     },
@@ -3208,6 +3329,65 @@ export default {
   color: var(--grackle-accent, #00ff88);
   background: rgba(0, 255, 136, 0.1);
   box-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
+}
+
+/* Column triggers */
+.col-triggers {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+
+.col-trigger-btn {
+  aspect-ratio: 1 / 1;
+  border: 1px solid rgba(255, 200, 60, 0.18);
+  background: rgba(36, 39, 47, 0.9);
+  color: rgba(255, 200, 60, 0.4);
+  border-radius: 5px;
+  font-size: 0.52rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.col-trigger-btn:hover {
+  border-color: rgba(255, 200, 60, 0.7);
+  color: rgba(255, 200, 60, 0.9);
+  background: rgba(255, 200, 60, 0.08);
+}
+
+.col-trigger-btn:active {
+  transform: scale(0.92);
+}
+
+/* Speed ramp buttons */
+.deck-ramp-btn {
+  padding: 2px 5px;
+  border: 1px solid rgba(100, 180, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(100, 180, 255, 0.55);
+  border-radius: 4px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+  user-select: none;
+}
+
+.deck-ramp-btn:hover {
+  border-color: rgba(100, 180, 255, 0.6);
+  color: rgba(140, 200, 255, 0.9);
+}
+
+.deck-ramp-active {
+  background: rgba(100, 180, 255, 0.15);
+  border-color: #64b4ff;
+  color: #9dd0ff;
 }
 
 /* Deck FX controls */
