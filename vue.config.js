@@ -127,6 +127,13 @@ module.exports = {
           .loader("babel-loader", {
             presets: [["@babel/preset-env", { targets: "defaults" }]],
           });
+
+        // "electron" is in devDependencies so getExternals() skips it.
+        // Mutate the existing externals object (set by the plugin) to add it.
+        const existingExternals = config.get("externals");
+        if (existingExternals && typeof existingExternals === "object") {
+          existingExternals.electron = 'require("electron")';
+        }
       },
 
       chainWebpackRendererProcess: (config) => {

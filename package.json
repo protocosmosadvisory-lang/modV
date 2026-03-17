@@ -18,7 +18,7 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "electron:build": "vue-cli-service electron:build",
-    "electron:serve": "vue-cli-service electron:serve",
+    "electron:serve": "unset ELECTRON_RUN_AS_NODE && vue-cli-service electron:serve",
     "postinstall": "electron-builder install-app-deps && patch-package",
     "postuninstall": "electron-builder install-app-deps",
     "test:e2e": "npx playwright test"
@@ -54,7 +54,7 @@
     "tap-tempo": "^0.1.1",
     "three": "^0.131.3",
     "uuid": "^9.0.0",
-    "vue": "^3.5.30",
+    "vue": "^2.7.14",
     "vue-color": "^2.7.1",
     "vue-fragment": "^1.5.1",
     "vue-golden-layout": "^2.1.0",
