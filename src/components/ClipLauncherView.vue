@@ -137,6 +137,16 @@
           :value="fxA.brightness"
           @input="updateFx('A', 'brightness', $event.target.value)"
         />
+        <label class="fx-label">CON</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="3"
+          step="0.05"
+          :value="fxA.contrast"
+          @input="updateFx('A', 'contrast', $event.target.value)"
+        />
         <label class="fx-label">HUE</label>
         <input
           type="range"
@@ -156,6 +166,16 @@
           step="0.05"
           :value="fxA.saturation"
           @input="updateFx('A', 'saturation', $event.target.value)"
+        />
+        <label class="fx-label">OPA</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="opacityA"
+          @input="setDeckOpacity('A', $event.target.value)"
         />
         <button class="fx-reset-btn" @click="resetFx('A')">↺</button>
       </div>
@@ -247,6 +267,28 @@
         </button>
         <span>B {{ Math.round(crossfader * 100) }}%</span>
       </div>
+      <!-- Solo deck buttons — snap crossfader to 0 or 1 -->
+      <div class="solo-btns">
+        <button
+          type="button"
+          class="solo-btn solo-btn-a"
+          :class="{ 'solo-btn-active': crossfader === 0 }"
+          title="Solo Deck A (snap crossfader to A)"
+          @click="soloDeck('A')"
+        >
+          A ▶
+        </button>
+        <button
+          type="button"
+          class="solo-btn solo-btn-b"
+          :class="{ 'solo-btn-active': crossfader === 1 }"
+          title="Solo Deck B (snap crossfader to B)"
+          @click="soloDeck('B')"
+        >
+          ◀ B
+        </button>
+      </div>
+
       <!-- Blend mode selector -->
       <div class="blend-mode-btns">
         <button
@@ -379,6 +421,16 @@
           :value="fxB.brightness"
           @input="updateFx('B', 'brightness', $event.target.value)"
         />
+        <label class="fx-label">CON</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="3"
+          step="0.05"
+          :value="fxB.contrast"
+          @input="updateFx('B', 'contrast', $event.target.value)"
+        />
         <label class="fx-label">HUE</label>
         <input
           type="range"
@@ -398,6 +450,16 @@
           step="0.05"
           :value="fxB.saturation"
           @input="updateFx('B', 'saturation', $event.target.value)"
+        />
+        <label class="fx-label">OPA</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="opacityB"
+          @input="setDeckOpacity('B', $event.target.value)"
         />
         <button class="fx-reset-btn" @click="resetFx('B')">↺</button>
       </div>
@@ -517,6 +579,8 @@ export default {
       lfoRate: 0.5,
       lfoPhase: 0,
       lfoInterval: null,
+      opacityA: 1.0,
+      opacityB: 1.0,
       masterSpeedA: 1.0,
       masterSpeedB: 1.0,
       blendMode: "cross",
@@ -962,6 +1026,28 @@ export default {
       }
 
       deckMixer.setFx(deck, defaults);
+    },
+
+    setDeckOpacity(deck, rawValue) {
+      const value = Math.max(0, Math.min(1, parseFloat(rawValue) || 1));
+
+      if (deck === "A") {
+        this.opacityA = value;
+      } else {
+        this.opacityB = value;
+      }
+
+      deckMixer.setOpacity(deck, value);
+    },
+
+    soloDeck(deck) {
+      const target = deck === "A" ? 0 : 1;
+      const current = this.crossfader;
+
+      // Toggle: if already at this extreme, return to center
+      const next = Math.abs(current - target) < 0.01 ? 0.5 : target;
+
+      clipLauncher.setCrossfader(next);
     },
 
     setMasterSpeed(deck, speed) {
@@ -1963,6 +2049,46 @@ export default {
   border-color: var(--grackle-accent, #00ff88);
   color: var(--grackle-accent, #00ff88);
   background: rgba(0, 255, 136, 0.08);
+}
+
+/* Solo deck buttons */
+.solo-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.solo-btn {
+  flex: 1;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.solo-btn:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.solo-btn-a.solo-btn-active {
+  border-color: #00ff88;
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.12);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
+}
+
+.solo-btn-b.solo-btn-active {
+  border-color: #00ff88;
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.12);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
 }
 
 @media (max-width: 1100px) {
