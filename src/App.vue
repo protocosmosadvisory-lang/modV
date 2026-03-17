@@ -106,6 +106,68 @@
     <FrameRateDialog />
 
     <ErrorWatcher />
+
+    <!-- Keyboard shortcuts overlay — toggle with ? -->
+    <transition name="shortcuts-fade">
+      <div
+        v-if="showShortcutsOverlay"
+        class="shortcuts-overlay"
+        @click.self="showShortcutsOverlay = false"
+      >
+        <div class="shortcuts-panel">
+          <div class="shortcuts-title">Keyboard Shortcuts</div>
+          <div class="shortcuts-grid">
+            <div class="shortcuts-section">
+              <div class="shortcuts-section-label">Clip Triggers</div>
+              <div class="shortcut-row">
+                <kbd>1 – 8</kbd><span>Trigger row 1 slots (active deck)</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Q W E R T Y U I</kbd
+                ><span>Trigger row 2 slots (active deck)</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Shift + 1–8</kbd
+                ><span>Scene row trigger (both decks)</span>
+              </div>
+            </div>
+            <div class="shortcuts-section">
+              <div class="shortcuts-section-label">Output</div>
+              <div class="shortcut-row">
+                <kbd>B</kbd><span>Blackout (hold)</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>W</kbd><span>Whiteout (hold)</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>O</kbd><span>Open output window</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>F</kbd><span>Fullscreen</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Esc</kbd><span>Exit fullscreen</span>
+              </div>
+            </div>
+            <div class="shortcuts-section">
+              <div class="shortcuts-section-label">Tempo</div>
+              <div class="shortcut-row">
+                <kbd>Space</kbd><span>Tap tempo</span>
+              </div>
+            </div>
+            <div class="shortcuts-section">
+              <div class="shortcuts-section-label">UI</div>
+              <div class="shortcut-row">
+                <kbd>?</kbd><span>Toggle this overlay</span>
+              </div>
+            </div>
+          </div>
+          <div class="shortcuts-close" @click="showShortcutsOverlay = false">
+            ✕ close
+          </div>
+        </div>
+      </div>
+    </transition>
   </main>
 </template>
 
@@ -175,6 +237,7 @@ export default {
       layoutState: null,
 
       triggerUiRestart: 0,
+      showShortcutsOverlay: false,
     };
   },
 
@@ -370,6 +433,11 @@ export default {
       }
 
       if (key === "escape") {
+        if (this.showShortcutsOverlay) {
+          this.showShortcutsOverlay = false;
+          return;
+        }
+
         this.exitAppFullscreen();
         return;
       }
@@ -437,6 +505,11 @@ export default {
       // W: whiteout (hold)
       if (key === "w") {
         deckMixer.setWhiteout(true);
+      }
+
+      // ?: toggle keyboard shortcuts overlay
+      if (event.key === "?" || event.key === "/") {
+        this.showShortcutsOverlay = !this.showShortcutsOverlay;
       }
     },
 
@@ -782,5 +855,99 @@ body,
 ::-webkit-scrollbar-corner,
 ::-webkit-resizer {
   background: transparent;
+}
+</style>
+
+<style>
+/* Keyboard shortcuts overlay */
+.shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.shortcuts-fade-enter-active,
+.shortcuts-fade-leave-active {
+  transition: opacity 160ms ease;
+}
+
+.shortcuts-fade-enter,
+.shortcuts-fade-leave-to {
+  opacity: 0;
+}
+
+.shortcuts-panel {
+  background: #1a1d24;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 24px 28px;
+  min-width: 480px;
+  max-width: 640px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+}
+
+.shortcuts-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 32px;
+}
+
+.shortcuts-section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: rgba(93, 255, 147, 0.8);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.shortcut-row kbd {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 0.7rem;
+  font-family: monospace;
+  color: #fff;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.shortcuts-close {
+  margin-top: 20px;
+  text-align: right;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.shortcuts-close:hover {
+  color: rgba(255, 255, 255, 0.7);
 }
 </style>
