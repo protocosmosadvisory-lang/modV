@@ -140,6 +140,9 @@
                 <kbd>`</kbd><span>Whiteout (hold)</span>
               </div>
               <div class="shortcut-row">
+                <kbd>H</kbd><span>Hard PANIC (stop + reset)</span>
+              </div>
+              <div class="shortcut-row">
                 <kbd>O</kbd><span>Open output window</span>
               </div>
               <div class="shortcut-row">
@@ -150,15 +153,36 @@
               </div>
             </div>
             <div class="shortcuts-section">
-              <div class="shortcuts-section-label">Nudge / Scrub</div>
+              <div class="shortcuts-section-label">Decks</div>
+              <div class="shortcut-row">
+                <kbd>A</kbd><span>Toggle Deck A reverse</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Z</kbd><span>Toggle Deck B reverse</span>
+              </div>
+            </div>
+            <div class="shortcuts-section">
+              <div class="shortcuts-section-label">Crossfader</div>
+              <div class="shortcut-row">
+                <kbd>, .</kbd><span>Nudge CF ←/→ (±5%)</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Shift+,</kbd><span>Hard cut to A</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>Shift+.</kbd><span>Hard cut to B</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>N</kbd><span>Snap CF to center</span>
+              </div>
+            </div>
+            <div class="shortcuts-section">
+              <div class="shortcuts-section-label">Nudge / Speed</div>
               <div class="shortcut-row">
                 <kbd>← →</kbd><span>Scrub Deck A (±0.1s)</span>
               </div>
               <div class="shortcut-row">
                 <kbd>↑ ↓</kbd><span>Scrub Deck B (±0.1s)</span>
-              </div>
-              <div class="shortcut-row">
-                <kbd>, .</kbd><span>Crossfader ←/→ (±5%)</span>
               </div>
               <div class="shortcut-row">
                 <kbd>[ ]</kbd><span>Deck A speed ÷2 / ×2</span>
@@ -595,6 +619,59 @@ export default {
         event.preventDefault();
         const speed = deckMixer.getMasterSpeed("B");
         deckMixer.setMasterSpeed("B", Math.min(32, speed * 2));
+        return;
+      }
+
+      // H: PANIC — stop all playback and reset effects
+      if (key === "h") {
+        event.preventDefault();
+        // Dispatch to ClipLauncherView's panic via the store or direct method
+        deckMixer.setBlackout(false);
+        deckMixer.setWhiteout(false);
+        deckMixer.playerA.stop();
+        deckMixer.playerB.stop();
+        deckMixer.setTrail(false);
+        deckMixer.setStrobe(false);
+        deckMixer.setReversed("A", false);
+        deckMixer.setReversed("B", false);
+        deckMixer._masterHueSpin = 0;
+        return;
+      }
+
+      // A: toggle reverse on Deck A
+      if (key === "a") {
+        event.preventDefault();
+        const rev = !deckMixer.playerA.isReversed;
+        deckMixer.setReversed("A", rev);
+        return;
+      }
+
+      // Z: toggle reverse on Deck B
+      if (key === "z") {
+        event.preventDefault();
+        const rev = !deckMixer.playerB.isReversed;
+        deckMixer.setReversed("B", rev);
+        return;
+      }
+
+      // Shift+, : hard cut crossfader to A
+      if (event.shiftKey && event.key === "<") {
+        event.preventDefault();
+        clipLauncher.setCrossfader(0);
+        return;
+      }
+
+      // Shift+. : hard cut crossfader to B
+      if (event.shiftKey && event.key === ">") {
+        event.preventDefault();
+        clipLauncher.setCrossfader(1);
+        return;
+      }
+
+      // n: snap crossfader to center
+      if (key === "n") {
+        event.preventDefault();
+        clipLauncher.setCrossfader(0.5);
         return;
       }
 

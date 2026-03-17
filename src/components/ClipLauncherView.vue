@@ -846,6 +846,55 @@
           @input="lfoRate = parseFloat($event.target.value)"
         />
       </div>
+      <div v-if="lfoActive" class="lfo-controls-row">
+        <button
+          v-for="shape in ['sine', 'triangle', 'square', 'saw']"
+          :key="shape"
+          type="button"
+          class="lfo-shape-btn"
+          :class="{ 'lfo-shape-active': lfoShape === shape }"
+          @click="
+            lfoShape = shape;
+            stopLfo();
+            startLfo();
+          "
+        >
+          {{ { sine: "~", triangle: "△", square: "⊓", saw: "/" }[shape] }}
+        </button>
+        <span class="lfo-sep">|</span>
+        <button
+          v-for="tgt in [
+            { id: 'cf', label: 'CF' },
+            { id: 'hue', label: 'HUE' },
+            { id: 'sat', label: 'SAT' },
+          ]"
+          :key="tgt.id"
+          type="button"
+          class="lfo-shape-btn"
+          :class="{ 'lfo-shape-active': lfoTarget === tgt.id }"
+          @click="
+            lfoTarget = tgt.id;
+            stopLfo();
+            startLfo();
+          "
+        >
+          {{ tgt.label }}
+        </button>
+      </div>
+      <!-- Master hue spin -->
+      <div class="lfo-rate-row">
+        <span class="popover-label">SPIN</span>
+        <input
+          type="range"
+          class="popover-slider"
+          min="-360"
+          max="360"
+          step="5"
+          :value="masterHueSpin"
+          @input="setMasterHueSpin($event.target.value)"
+          title="Continuously rotate master output hue (degrees/sec)"
+        />
+      </div>
     </section>
 
     <section
@@ -1280,6 +1329,9 @@ export default {
       crossfaderLearning: false,
       lfoActive: false,
       lfoRate: 0.5,
+      lfoShape: "sine",
+      lfoTarget: "cf",
+      masterHueSpin: 0,
       lfoPhase: 0,
       lfoInterval: null,
       opacityA: 1.0,
@@ -1879,9 +1931,33 @@ export default {
         }
 
         this.lfoPhase += (2 * Math.PI * this.lfoRate) / 60;
-        const value = (Math.sin(this.lfoPhase) + 1) / 2;
+        const p = this.lfoPhase;
+        let value;
 
-        clipLauncher.setCrossfader(value);
+        if (this.lfoShape === "triangle") {
+          // Triangle: 0→1→0→1...
+          value = 1 - Math.abs(((p / Math.PI) % 2) - 1);
+        } else if (this.lfoShape === "square") {
+          value = Math.sin(p) >= 0 ? 1 : 0;
+        } else if (this.lfoShape === "saw") {
+          value = (p % (2 * Math.PI)) / (2 * Math.PI);
+        } else {
+          // sine (default)
+          value = (Math.sin(p) + 1) / 2;
+        }
+
+        if (this.lfoTarget === "hue") {
+          const hue = value * 360 - 180;
+          this.masterHue = hue;
+          deckMixer.setMasterFx({ hue });
+        } else if (this.lfoTarget === "sat") {
+          const sat = value * 3;
+          this.masterSaturation = sat;
+          deckMixer.setMasterFx({ saturation: sat });
+        } else {
+          // crossfader (default)
+          clipLauncher.setCrossfader(value);
+        }
       };
 
       this.lfoInterval = setInterval(tick, 1000 / 60);
@@ -2046,11 +2122,13 @@ export default {
       this.strobeEnabled = false;
       deckMixer.setStrobe(false);
 
-      // Reset master output FX
+      // Reset master output FX + hue spin
       this.masterContrast = 1.0;
       this.masterSaturation = 1.0;
       this.masterHue = 0;
+      this.masterHueSpin = 0;
       deckMixer.setMasterFx({ contrast: 1.0, saturation: 1.0, hue: 0 });
+      deckMixer._masterHueSpin = 0;
 
       // Stop LFO
       this.stopLfo();
@@ -2855,6 +2933,11 @@ export default {
       deckMixer.setFx(deck, this[fxKey]);
     },
 
+    setMasterHueSpin(value) {
+      this.masterHueSpin = parseFloat(value);
+      deckMixer._masterHueSpin = this.masterHueSpin;
+    },
+
     toggleStrobe() {
       this.strobeEnabled = !this.strobeEnabled;
       deckMixer.setStrobe(this.strobeEnabled, this.strobeHz);
@@ -3397,6 +3480,42 @@ export default {
   flex-direction: column;
   gap: 4px;
   padding: 4px 0;
+}
+
+.lfo-controls-row {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.lfo-sep {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.7rem;
+  margin: 0 2px;
+}
+
+.lfo-shape-btn {
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.4);
+  border-radius: 3px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.lfo-shape-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.lfo-shape-active {
+  border-color: var(--grackle-accent-2, #7c3aff);
+  color: #a78bff;
+  background: rgba(124, 58, 255, 0.12);
 }
 
 @keyframes midi-learn-ring {

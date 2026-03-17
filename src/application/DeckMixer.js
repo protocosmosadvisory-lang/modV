@@ -119,6 +119,7 @@ class DeckMixer {
     this._masterContrast = 1.0;
     this._masterSaturation = 1.0;
     this._masterHue = 0;
+    this._masterHueSpin = 0; // degrees per second, continuously rotates hue
 
     // Second-pass output canvas (master FX applied here)
     this._outCanvas = null;
@@ -733,6 +734,12 @@ class DeckMixer {
     ctx.globalAlpha = 1;
     ctx.filter = "none";
     ctx.globalCompositeOperation = "source-over";
+
+    // Continuous hue spin
+    if (this._masterHueSpin !== 0) {
+      this._masterHue =
+        (((this._masterHue + this._masterHueSpin / 60) % 360) + 360) % 360;
+    }
 
     // Master output FX pass: composite canvas → output canvas with CSS filter
     if (this._outCtx) {
