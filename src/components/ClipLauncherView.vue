@@ -328,7 +328,12 @@
     </section>
 
     <section class="crossfader-column">
-      <canvas ref="previewCanvas" class="output-preview"></canvas>
+      <canvas
+        ref="previewCanvas"
+        class="output-preview"
+        title="Click to seek dominant deck"
+        @click="seekFromPreviewClick"
+      ></canvas>
 
       <!-- Row scene triggers: fire first loaded clip in each row across both decks -->
       <div class="row-triggers">
@@ -2069,6 +2074,20 @@ export default {
       this._presetLongPressIndex = null;
     },
 
+    seekFromPreviewClick(event) {
+      const canvas = this.$refs.previewCanvas;
+
+      if (!canvas) {
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const t = (event.clientX - rect.left) / rect.width;
+      const cf = this.crossfader;
+      const player = cf > 0.5 ? deckMixer.playerB : deckMixer.playerA;
+      player.seek(Math.max(0, Math.min(1, t)));
+    },
+
     toggleMirror(deck) {
       if (deck === "A") {
         this.mirrorA = !this.mirrorA;
@@ -2452,6 +2471,7 @@ export default {
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: #000;
+  cursor: col-resize;
 }
 
 .sync-toggle {

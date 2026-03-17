@@ -157,6 +157,15 @@
               <div class="shortcut-row">
                 <kbd>↑ ↓</kbd><span>Scrub Deck B (±0.1s)</span>
               </div>
+              <div class="shortcut-row">
+                <kbd>, .</kbd><span>Crossfader ←/→ (±5%)</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>[ ]</kbd><span>Deck A speed ÷2 / ×2</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>{ }</kbd><span>Deck B speed ÷2 / ×2</span>
+              </div>
             </div>
             <div class="shortcuts-section">
               <div class="shortcuts-section-label">Tempo</div>
@@ -541,6 +550,51 @@ export default {
       if (key === "arrowdown") {
         event.preventDefault();
         deckMixer.playerB.nudge(-NUDGE_SEC);
+        return;
+      }
+
+      // , / . : nudge crossfader left/right
+      if (event.key === "," || event.key === "<") {
+        event.preventDefault();
+        const cf = this.$store.state["clip-launcher"]?.crossfader ?? 0.5;
+        clipLauncher.setCrossfader(Math.max(0, cf - 0.05));
+        return;
+      }
+
+      if (event.key === "." || event.key === ">") {
+        event.preventDefault();
+        const cf = this.$store.state["clip-launcher"]?.crossfader ?? 0.5;
+        clipLauncher.setCrossfader(Math.min(1, cf + 0.05));
+        return;
+      }
+
+      // [ / ] : halve / double Deck A master speed
+      if (event.key === "[") {
+        event.preventDefault();
+        const speed = deckMixer.getMasterSpeed("A");
+        deckMixer.setMasterSpeed("A", Math.max(0.05, speed / 2));
+        return;
+      }
+
+      if (event.key === "]") {
+        event.preventDefault();
+        const speed = deckMixer.getMasterSpeed("A");
+        deckMixer.setMasterSpeed("A", Math.min(32, speed * 2));
+        return;
+      }
+
+      // { / } : halve / double Deck B master speed
+      if (event.key === "{") {
+        event.preventDefault();
+        const speed = deckMixer.getMasterSpeed("B");
+        deckMixer.setMasterSpeed("B", Math.max(0.05, speed / 2));
+        return;
+      }
+
+      if (event.key === "}") {
+        event.preventDefault();
+        const speed = deckMixer.getMasterSpeed("B");
+        deckMixer.setMasterSpeed("B", Math.min(32, speed * 2));
         return;
       }
 
