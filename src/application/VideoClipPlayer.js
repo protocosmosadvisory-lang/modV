@@ -153,6 +153,16 @@ export class VideoClipPlayer {
     }
   }
 
+  /** Nudge the current time by delta seconds (clamped to duration). */
+  nudge(deltaSec) {
+    if (this._video && isFinite(this._video.duration)) {
+      this._video.currentTime = Math.max(
+        0,
+        Math.min(this._video.duration, this._video.currentTime + deltaSec)
+      );
+    }
+  }
+
   /** Seek to normalised position 0–1. */
   seek(t) {
     if (this._video && isFinite(this._video.duration)) {

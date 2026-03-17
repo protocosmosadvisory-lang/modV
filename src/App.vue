@@ -150,6 +150,15 @@
               </div>
             </div>
             <div class="shortcuts-section">
+              <div class="shortcuts-section-label">Nudge / Scrub</div>
+              <div class="shortcut-row">
+                <kbd>← →</kbd><span>Scrub Deck A (±0.1s)</span>
+              </div>
+              <div class="shortcut-row">
+                <kbd>↑ ↓</kbd><span>Scrub Deck B (±0.1s)</span>
+              </div>
+            </div>
+            <div class="shortcuts-section">
               <div class="shortcuts-section-label">Tempo</div>
               <div class="shortcut-row">
                 <kbd>Space</kbd><span>Tap tempo</span>
@@ -446,7 +455,8 @@ export default {
         return;
       }
 
-      if (event.repeat && key !== " ") {
+      const isArrow = key.startsWith("arrow");
+      if (event.repeat && key !== " " && !isArrow) {
         return;
       }
 
@@ -505,6 +515,32 @@ export default {
       // ` (backtick): whiteout (hold) — W conflicts with Q-I row shortcut
       if (event.key === "`") {
         deckMixer.setWhiteout(true);
+        return;
+      }
+
+      // Arrow keys: nudge clip position (A = ←/→, B = ↑/↓)
+      const NUDGE_SEC = 0.1;
+      if (key === "arrowleft") {
+        event.preventDefault();
+        deckMixer.playerA.nudge(-NUDGE_SEC);
+        return;
+      }
+
+      if (key === "arrowright") {
+        event.preventDefault();
+        deckMixer.playerA.nudge(NUDGE_SEC);
+        return;
+      }
+
+      if (key === "arrowup") {
+        event.preventDefault();
+        deckMixer.playerB.nudge(NUDGE_SEC);
+        return;
+      }
+
+      if (key === "arrowdown") {
+        event.preventDefault();
+        deckMixer.playerB.nudge(-NUDGE_SEC);
         return;
       }
 
