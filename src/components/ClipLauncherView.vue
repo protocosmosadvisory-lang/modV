@@ -158,6 +158,15 @@
         </button>
         <button
           type="button"
+          class="deck-tile-btn"
+          :class="{ 'deck-tile-active': tileModeA === '2x2' }"
+          title="2×2 tile grid for Deck A"
+          @click="cycleTileMode('A')"
+        >
+          {{ tileModeA === "mirror4" ? "⊞M" : tileModeA === "2x2" ? "⊞" : "⊡" }}
+        </button>
+        <button
+          type="button"
           class="deck-stutter-btn"
           :class="{ 'deck-stutter-active': stutteringDeck === 'A' }"
           title="Stutter — hold to loop current frame rapidly"
@@ -669,6 +678,15 @@
         </button>
         <button
           type="button"
+          class="deck-tile-btn"
+          :class="{ 'deck-tile-active': tileModeB === '2x2' }"
+          title="2×2 tile / mirror-4 for Deck B (click to cycle)"
+          @click="cycleTileMode('B')"
+        >
+          {{ tileModeB === "mirror4" ? "⊞M" : tileModeB === "2x2" ? "⊞" : "⊡" }}
+        </button>
+        <button
+          type="button"
           class="deck-stutter-btn"
           :class="{ 'deck-stutter-active': stutteringDeck === 'B' }"
           title="Stutter — hold to loop current frame rapidly"
@@ -957,6 +975,8 @@ export default {
       camB: false,
       mirrorA: false,
       mirrorB: false,
+      tileModeA: null,
+      tileModeB: null,
       trailEnabled: false,
       trailDecay: 0.85,
       scenePresets: [null, null, null, null],
@@ -1517,6 +1537,12 @@ export default {
       deckMixer.setMirror("A", false);
       deckMixer.setMirror("B", false);
 
+      // Reset tile modes
+      this.tileModeA = null;
+      this.tileModeB = null;
+      deckMixer.setTileMode("A", null);
+      deckMixer.setTileMode("B", null);
+
       // Reset trail
       this.trailEnabled = false;
       deckMixer.setTrail(false);
@@ -1964,6 +1990,8 @@ export default {
         trailDecay: this.trailDecay,
         mirrorA: this.mirrorA,
         mirrorB: this.mirrorB,
+        tileModeA: this.tileModeA,
+        tileModeB: this.tileModeB,
       };
     },
 
@@ -2030,6 +2058,16 @@ export default {
         this.mirrorB = scene.mirrorB;
         deckMixer.setMirror("B", scene.mirrorB);
       }
+
+      if (scene.tileModeA !== undefined) {
+        this.tileModeA = scene.tileModeA;
+        deckMixer.setTileMode("A", scene.tileModeA);
+      }
+
+      if (scene.tileModeB !== undefined) {
+        this.tileModeB = scene.tileModeB;
+        deckMixer.setTileMode("B", scene.tileModeB);
+      }
     },
 
     _persistPresets() {
@@ -2086,6 +2124,20 @@ export default {
       const cf = this.crossfader;
       const player = cf > 0.5 ? deckMixer.playerB : deckMixer.playerA;
       player.seek(Math.max(0, Math.min(1, t)));
+    },
+
+    cycleTileMode(deck) {
+      const current = deck === "A" ? this.tileModeA : this.tileModeB;
+      const next =
+        current === null ? "2x2" : current === "2x2" ? "mirror4" : null;
+
+      if (deck === "A") {
+        this.tileModeA = next;
+      } else {
+        this.tileModeB = next;
+      }
+
+      deckMixer.setTileMode(deck, next);
     },
 
     toggleMirror(deck) {
@@ -3072,6 +3124,30 @@ export default {
   border-radius: 50%;
   background: #5dff93;
   box-shadow: 0 0 4px rgba(93, 255, 147, 0.6);
+}
+
+/* Tile mode button */
+.deck-tile-btn {
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.deck-tile-btn:hover {
+  border-color: rgba(255, 160, 80, 0.5);
+  color: rgba(255, 180, 100, 0.85);
+}
+
+.deck-tile-active {
+  border-color: #ffb060;
+  color: #ffb060;
+  background: rgba(255, 140, 50, 0.1);
+  box-shadow: 0 0 10px rgba(255, 130, 40, 0.2);
 }
 
 /* Mirror button */

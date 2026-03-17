@@ -82,6 +82,10 @@ class DeckMixer {
     // Per-deck mirror (horizontal flip)
     this.mirrorA = false;
     this.mirrorB = false;
+
+    // Per-deck tile mode: null | "2x2" | "mirror4"
+    this.tileModeA = null;
+    this.tileModeB = null;
   }
 
   setBlackout(active) {
@@ -99,6 +103,17 @@ class DeckMixer {
       this.mirrorA = Boolean(enabled);
     } else {
       this.mirrorB = Boolean(enabled);
+    }
+  }
+
+  setTileMode(deck, mode) {
+    const valid = [null, "2x2", "mirror4"];
+    const safeMode = valid.includes(mode) ? mode : null;
+
+    if (deck === "A") {
+      this.tileModeA = safeMode;
+    } else {
+      this.tileModeB = safeMode;
     }
   }
 
@@ -241,6 +256,74 @@ class DeckMixer {
     }
   }
 
+  /**
+   * Draw a deck's canvas onto ctx with mirror/tile applied.
+   * Assumes ctx.globalAlpha, ctx.filter, ctx.globalCompositeOperation
+   * are already set by the caller.
+   */
+  _drawDeck(ctx, srcCanvas, mirror, tileMode, zx, zy, zw, zh, w, h) {
+    if (!tileMode) {
+      // Simple draw with optional mirror
+      if (mirror) {
+        ctx.save();
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(srcCanvas, zx, zy, zw, zh);
+        ctx.restore();
+      } else {
+        ctx.drawImage(srcCanvas, zx, zy, zw, zh);
+      }
+
+      return;
+    }
+
+    const hw = w / 2;
+    const hh = h / 2;
+
+    if (tileMode === "2x2") {
+      // Four copies at quarter canvas size
+      for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 2; col++) {
+          if (mirror) {
+            ctx.save();
+            ctx.translate(col === 0 ? hw : w, row * hh);
+            ctx.scale(-1, 1);
+            ctx.drawImage(srcCanvas, 0, 0, hw, hh);
+            ctx.restore();
+          } else {
+            ctx.drawImage(srcCanvas, col * hw, row * hh, hw, hh);
+          }
+        }
+      }
+
+      return;
+    }
+
+    if (tileMode === "mirror4") {
+      // Quad mirror: each quadrant reflects its neighbour
+      // Top-left: normal
+      ctx.drawImage(srcCanvas, 0, 0, hw, hh);
+      // Top-right: horizontal flip
+      ctx.save();
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(srcCanvas, 0, 0, hw, hh);
+      ctx.restore();
+      // Bottom-left: vertical flip
+      ctx.save();
+      ctx.translate(0, h);
+      ctx.scale(1, -1);
+      ctx.drawImage(srcCanvas, 0, 0, hw, hh);
+      ctx.restore();
+      // Bottom-right: both flips
+      ctx.save();
+      ctx.translate(w, h);
+      ctx.scale(-1, -1);
+      ctx.drawImage(srcCanvas, 0, 0, hw, hh);
+      ctx.restore();
+    }
+  }
+
   get modV() {
     return window.modV;
   }
@@ -367,16 +450,18 @@ class DeckMixer {
       ctx.globalAlpha = alphaA;
       ctx.filter = filterA;
       ctx.globalCompositeOperation = "source-over";
-
-      if (this.mirrorA) {
-        ctx.save();
-        ctx.translate(w, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(this.playerA.canvas, zx, zy, zw, zh);
-        ctx.restore();
-      } else {
-        ctx.drawImage(this.playerA.canvas, zx, zy, zw, zh);
-      }
+      this._drawDeck(
+        ctx,
+        this.playerA.canvas,
+        this.mirrorA,
+        this.tileModeA,
+        zx,
+        zy,
+        zw,
+        zh,
+        w,
+        h
+      );
     }
 
     if (this.playerB.canvas && this.playerB.isPlaying && alphaB > 0.001) {
@@ -384,16 +469,18 @@ class DeckMixer {
       ctx.filter = filterB;
       ctx.globalCompositeOperation =
         mode === "cross" ? "source-over" : compositeOp;
-
-      if (this.mirrorB) {
-        ctx.save();
-        ctx.translate(w, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(this.playerB.canvas, zx, zy, zw, zh);
-        ctx.restore();
-      } else {
-        ctx.drawImage(this.playerB.canvas, zx, zy, zw, zh);
-      }
+      this._drawDeck(
+        ctx,
+        this.playerB.canvas,
+        this.mirrorB,
+        this.tileModeB,
+        zx,
+        zy,
+        zw,
+        zh,
+        w,
+        h
+      );
     }
 
     // Animate master opacity toward target (smooth blackout/fadein)
