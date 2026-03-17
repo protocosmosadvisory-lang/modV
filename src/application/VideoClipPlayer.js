@@ -55,7 +55,7 @@ export class VideoClipPlayer {
     }
 
     this.loopMode = LOOP_MODES.includes(loopMode) ? loopMode : "loop";
-    this.speed = Math.max(0.1, Math.min(16, Number(speed) || 1));
+    this.speed = Math.max(0.05, Math.min(32, Number(speed) || 1));
 
     const url =
       source instanceof File
@@ -146,7 +146,7 @@ export class VideoClipPlayer {
 
   /** Update playback rate on the running clip. */
   setSpeed(speed) {
-    this.speed = Math.max(0.1, Math.min(16, Number(speed) || 1));
+    this.speed = Math.max(0.05, Math.min(32, Number(speed) || 1));
 
     if (this._video) {
       this._video.playbackRate = this.speed;

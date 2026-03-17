@@ -49,6 +49,27 @@
         />
       </template>
 
+      <template v-if="popover.hasClip">
+        <label class="popover-label">
+          BPM Sync
+          <span v-if="popover.bpmSyncBeats > 0" class="popover-value">
+            {{ popoverBpmPreview }}
+          </span>
+        </label>
+        <div class="popover-loop-buttons">
+          <button
+            v-for="b in bpmSyncOptions"
+            :key="b.value"
+            type="button"
+            class="loop-btn"
+            :class="{ 'loop-btn-active': popover.bpmSyncBeats === b.value }"
+            @click="popover.bpmSyncBeats = b.value"
+          >
+            {{ b.label }}
+          </button>
+        </div>
+      </template>
+
       <div class="popover-actions">
         <button
           v-if="popover.hasClip"
@@ -605,12 +626,20 @@ export default {
       beatSyncMode: clipLauncher.beatSyncMode,
       lastKickState: false,
       loopModes: LOOP_MODES,
+      bpmSyncOptions: [
+        { label: "Off", value: 0 },
+        { label: "1", value: 1 },
+        { label: "2", value: 2 },
+        { label: "4", value: 4 },
+        { label: "8", value: 8 },
+      ],
       popover: {
         visible: false,
         deck: null,
         slot: null,
         slotLabel: "",
         loopMode: "loop",
+        bpmSyncBeats: 0,
         speed: 1.0,
         hasClip: false,
         hasMidiBinding: false,
@@ -746,6 +775,19 @@ export default {
 
     hasCrossfaderBinding() {
       return Boolean(midiBindingService.crossfaderBinding);
+    },
+
+    popoverBpmPreview() {
+      const { bpmSyncBeats, slot } = this.popover;
+
+      if (!bpmSyncBeats || !slot || !slot.source || !slot.source.duration) {
+        return "";
+      }
+
+      const bpm = this.$modV?.store?.state?.beats?.bpm ?? 120;
+      const targetDuration = (bpmSyncBeats * 60) / bpm;
+      const rate = slot.source.duration / targetDuration;
+      return `${rate.toFixed(2)}x @ ${bpm}BPM`;
     },
   },
 
@@ -1354,6 +1396,7 @@ export default {
         slotLabel: slot.source?.name || `Slot ${this.slotAddress(slot.id)}`,
         loopMode: slot.loopMode || "loop",
         speed: slot.speed || 1.0,
+        bpmSyncBeats: slot.bpmSyncBeats || 0,
         hasClip: this.slotHasPlayableSource(slot),
         hasMidiBinding,
         style: { top: `${top}px`, left: `${left}px` },
@@ -1377,10 +1420,14 @@ export default {
         return;
       }
 
-      const { deck, slot, loopMode, speed } = this.popover;
+      const { deck, slot, loopMode, speed, bpmSyncBeats } = this.popover;
       const { row, col } = parseSlotId(slot.id);
 
-      clipLauncher.updateSlotSettings(deck, row, col, { loopMode, speed });
+      clipLauncher.updateSlotSettings(deck, row, col, {
+        loopMode,
+        speed,
+        bpmSyncBeats,
+      });
       this.closePopover();
     },
 

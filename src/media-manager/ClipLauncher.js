@@ -88,13 +88,16 @@ class ClipLauncher {
     const token = (this._loadTokens[slotKey] =
       (this._loadTokens[slotKey] || 0) + 1);
     let thumbnail = null;
+    let clipDuration = 0;
 
     if (
       typeof File !== "undefined" &&
       source instanceof File &&
       this.isSupportedFile(source)
     ) {
-      thumbnail = await this.generateThumbnail(source);
+      const result = await this.generateThumbnail(source);
+      thumbnail = result.thumbnail;
+      clipDuration = result.duration;
     }
 
     // Abort if a newer load started while we were generating the thumbnail
@@ -102,11 +105,16 @@ class ClipLauncher {
       return null;
     }
 
+    const sourceWithMeta =
+      clipDuration > 0
+        ? { ...normalizedSource, duration: clipDuration }
+        : normalizedSource;
+
     store.commit("clip-launcher/LOAD_CLIP", {
       deck: normalizedDeck,
       row,
       col,
-      source: normalizedSource,
+      source: sourceWithMeta,
       thumbnail,
     });
 
@@ -140,9 +148,23 @@ class ClipLauncher {
     const player =
       normalizedDeck === "A" ? deckMixer.playerA : deckMixer.playerB;
     const masterSpeed = deckMixer.getMasterSpeed(normalizedDeck);
+
+    let computedSpeed = (slot.speed || 1.0) * masterSpeed;
+
+    // BPM-sync: override speed so the clip loops exactly every N beats
+    if (slot.bpmSyncBeats > 0 && slot.source.duration > 0) {
+      const bpm =
+        (typeof window !== "undefined" &&
+          window.modV?.store?.state?.beats?.bpm) ||
+        120;
+      const targetDuration = (slot.bpmSyncBeats * 60) / bpm;
+      const bpmRate = slot.source.duration / targetDuration;
+      computedSpeed = Math.max(0.05, Math.min(32, bpmRate));
+    }
+
     player.play(slot.source, {
       loopMode: slot.loopMode || "loop",
-      speed: (slot.speed || 1.0) * masterSpeed,
+      speed: computedSpeed,
     });
 
     const activeSlot = this.getSlot(normalizedDeck, row, col);
@@ -191,7 +213,7 @@ class ClipLauncher {
     });
   }
 
-  updateSlotSettings(deck, row, col, { loopMode, speed } = {}) {
+  updateSlotSettings(deck, row, col, { loopMode, speed, bpmSyncBeats } = {}) {
     const normalizedDeck = normalizeDeck(deck);
 
     store.commit("clip-launcher/UPDATE_SLOT_SETTINGS", {
@@ -200,6 +222,7 @@ class ClipLauncher {
       col,
       loopMode,
       speed,
+      bpmSyncBeats,
     });
 
     const slot = this.getSlot(normalizedDeck, row, col);
@@ -251,7 +274,7 @@ class ClipLauncher {
         typeof URL.createObjectURL !== "function" ||
         typeof URL.revokeObjectURL !== "function"
       ) {
-        resolve(null);
+        resolve({ thumbnail: null, duration: 0 });
         return;
       }
 
@@ -262,7 +285,7 @@ class ClipLauncher {
 
       if (!context) {
         URL.revokeObjectURL(objectURL);
-        resolve(null);
+        resolve({ thumbnail: null, duration: 0 });
         return;
       }
 
@@ -275,6 +298,7 @@ class ClipLauncher {
       video.src = objectURL;
 
       let settled = false;
+      let videoDuration = 0;
 
       const finalize = (thumbnail = null) => {
         if (settled) {
@@ -286,7 +310,7 @@ class ClipLauncher {
         video.removeAttribute("src");
         video.load();
         URL.revokeObjectURL(objectURL);
-        resolve(thumbnail);
+        resolve({ thumbnail, duration: videoDuration });
       };
 
       video.addEventListener("error", () => finalize(null), { once: true });
@@ -294,7 +318,9 @@ class ClipLauncher {
       video.addEventListener(
         "loadedmetadata",
         () => {
-          if (!Number.isFinite(video.duration) || video.duration <= 0) {
+          videoDuration = Number.isFinite(video.duration) ? video.duration : 0;
+
+          if (videoDuration <= 0) {
             finalize(null);
             return;
           }

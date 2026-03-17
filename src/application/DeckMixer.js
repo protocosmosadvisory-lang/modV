@@ -127,7 +127,7 @@ class DeckMixer {
   }
 
   setMasterSpeed(deck, speed) {
-    const clamped = Math.max(0.1, Math.min(16, Number(speed) || 1));
+    const clamped = Math.max(0.05, Math.min(32, Number(speed) || 1));
 
     if (deck === "A") {
       this._masterSpeedA = clamped;

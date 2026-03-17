@@ -10,6 +10,7 @@ function createSlot(deck, row, col) {
     thumbnail: null,
     loopMode: "loop",
     speed: 1.0,
+    bpmSyncBeats: 0, // 0=off; 1/2/4/8 = loop in that many beats at master BPM
     active: false,
   };
 }
@@ -44,10 +45,12 @@ function serializeDecks(decks) {
               name: slot.source.name,
               path: slot.source.path,
               url: slot.source.url,
+              duration: slot.source.duration || 0,
             }
           : null,
         loopMode: slot.loopMode,
         speed: slot.speed,
+        bpmSyncBeats: slot.bpmSyncBeats || 0,
       }))
     );
   }
@@ -100,6 +103,14 @@ function rehydrateState(saved) {
 
         if (typeof savedSlot.speed === "number" && isFinite(savedSlot.speed)) {
           slot.speed = Math.max(0.1, Math.min(16, savedSlot.speed));
+        }
+
+        if ([0, 1, 2, 4, 8].includes(savedSlot.bpmSyncBeats)) {
+          slot.bpmSyncBeats = savedSlot.bpmSyncBeats;
+        }
+
+        if (savedSlot.source && typeof savedSlot.source.duration === "number") {
+          slot.source = { ...slot.source, duration: savedSlot.source.duration };
         }
       }
     }
@@ -225,7 +236,10 @@ const mutations = {
     persistState(state);
   },
 
-  UPDATE_SLOT_SETTINGS(state, { deck, row, col, loopMode, speed }) {
+  UPDATE_SLOT_SETTINGS(
+    state,
+    { deck, row, col, loopMode, speed, bpmSyncBeats }
+  ) {
     const { slot } = getSlot(state, deck, row, col);
 
     if (loopMode !== undefined && LOOP_MODES.includes(loopMode)) {
@@ -238,6 +252,11 @@ const mutations = {
       if (isFinite(numSpeed)) {
         slot.speed = Math.max(0.1, Math.min(16, numSpeed));
       }
+    }
+
+    if (bpmSyncBeats !== undefined) {
+      const beats = Number(bpmSyncBeats);
+      slot.bpmSyncBeats = [0, 1, 2, 4, 8].includes(beats) ? beats : 0;
     }
 
     persistState(state);
