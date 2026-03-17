@@ -924,6 +924,18 @@
       </div>
 
       <!-- Scene presets: hold to save, tap to recall -->
+      <button
+        class="wizard-help-btn"
+        type="button"
+        title="Open setup wizard"
+        @click="
+          showWizard = true;
+          wizardStep = 0;
+          templatesLoaded = false;
+        "
+      >
+        ?
+      </button>
       <div class="scene-presets">
         <span class="scene-presets-label">SCENE</span>
         <button
@@ -1367,6 +1379,151 @@
         </button>
       </div>
     </section>
+
+    <!-- First-launch Wizard Overlay -->
+    <transition name="wizard-fade">
+      <div v-if="showWizard" class="wizard-overlay" @click.self="closeWizard">
+        <div class="wizard-panel">
+          <div class="wizard-steps">
+            <span
+              v-for="n in 3"
+              :key="n"
+              class="wizard-step-dot"
+              :class="{ 'wizard-step-dot-active': wizardStep === n - 1 }"
+            ></span>
+          </div>
+
+          <!-- Step 0: Welcome -->
+          <div v-if="wizardStep === 0" class="wizard-step">
+            <div class="wizard-title">Welcome to Grackle</div>
+            <div class="wizard-body">
+              <p>
+                You're looking at a live video mixer. Two video decks, a
+                crossfader, and FX — all running in real time.
+              </p>
+              <div class="wizard-diagram">
+                <div class="wd-box wd-deck">
+                  DECK A<br /><span class="wd-sub">your clips</span>
+                </div>
+                <div class="wd-box wd-cf">
+                  ◄ CF ►<br /><span class="wd-sub">blend</span>
+                </div>
+                <div class="wd-box wd-deck">
+                  DECK B<br /><span class="wd-sub">your clips</span>
+                </div>
+              </div>
+              <p class="wizard-hint">
+                Load clips on each side. Move the crossfader to blend between
+                them.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 1: Load clips -->
+          <div v-if="wizardStep === 1" class="wizard-step">
+            <div class="wizard-title">Load &amp; Play Clips</div>
+            <div class="wizard-body">
+              <div class="wizard-how-list">
+                <div class="wizard-how-item">
+                  <div class="wizard-how-icon">DRAG</div>
+                  <div>Drop video files directly onto any grid slot</div>
+                </div>
+                <div class="wizard-how-item">
+                  <div class="wizard-how-icon">CLICK</div>
+                  <div>
+                    Click any empty slot (the <strong>+</strong>) to browse your
+                    files
+                  </div>
+                </div>
+                <div class="wizard-how-item">
+                  <div class="wizard-how-icon">PLAY</div>
+                  <div>Tap a loaded slot to trigger it — tap again to stop</div>
+                </div>
+                <div class="wizard-how-item">
+                  <div class="wizard-how-icon">KEYS</div>
+                  <div>
+                    Press <kbd>?</kbd> at any time to see all keyboard shortcuts
+                  </div>
+                </div>
+              </div>
+              <p class="wizard-hint">
+                Each deck has 8 columns × 8 rows = 64 slots per side.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 2: Templates -->
+          <div v-if="wizardStep === 2" class="wizard-step">
+            <div class="wizard-title">Start With Scene Templates</div>
+            <div class="wizard-body">
+              <p>
+                Load 4 preset scenes into your <strong>SCENE</strong> buttons
+                for instant vibe switching. Hold a SCENE button to overwrite it
+                later.
+              </p>
+              <div class="wizard-templates">
+                <div class="wizard-template-row">
+                  <span class="wt-num">1</span>
+                  <span class="wt-name">CLEAN</span>
+                  <span class="wt-desc"
+                    >Neutral crossfade, no effects — good starting point</span
+                  >
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">2</span>
+                  <span class="wt-name">NEON</span>
+                  <span class="wt-desc"
+                    >Screen blend · saturated · beat flash on</span
+                  >
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">3</span>
+                  <span class="wt-name">NOIR</span>
+                  <span class="wt-desc"
+                    >Multiply blend · grayscale · motion trail</span
+                  >
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">4</span>
+                  <span class="wt-name">HYPE</span>
+                  <span class="wt-desc"
+                    >Add blend · mirror A · beat flash + zoom</span
+                  >
+                </div>
+              </div>
+              <button
+                class="wizard-load-btn"
+                :class="{ 'wizard-load-btn-done': templatesLoaded }"
+                @click="loadDefaultTemplates"
+              >
+                {{ templatesLoaded ? "✓ Templates Loaded" : "Load Templates" }}
+              </button>
+            </div>
+          </div>
+
+          <div class="wizard-nav">
+            <button
+              v-if="wizardStep > 0"
+              class="wizard-btn wizard-btn-ghost"
+              @click="wizardStep--"
+            >
+              Back
+            </button>
+            <span v-else></span>
+            <button
+              v-if="wizardStep < 2"
+              class="wizard-btn"
+              @click="wizardStep++"
+            >
+              Next →
+            </button>
+            <button v-else class="wizard-btn" @click="closeWizard">Done</button>
+          </div>
+
+          <div class="wizard-skip" @click="closeWizard">skip</div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -1531,6 +1688,9 @@ export default {
         { label: "480p", w: 854, h: 480 },
       ],
       scenePresets: [null, null, null, null],
+      showWizard: false,
+      wizardStep: 0,
+      templatesLoaded: false,
       showFxA: false,
       showFxB: false,
       fxA: {
@@ -1662,6 +1822,13 @@ export default {
       }
     } catch (_e) {
       // ignore corrupt storage
+    }
+
+    // Show wizard on first launch
+    if (!window.localStorage.getItem("grackle-wizard-done")) {
+      this.$nextTick(() => {
+        this.showWizard = true;
+      });
     }
 
     this._autoTriggerBeatCount = 0;
@@ -2913,6 +3080,172 @@ export default {
         );
       } catch (_e) {
         // storage quota
+      }
+    },
+
+    loadDefaultTemplates() {
+      const clean = {
+        fxA: {
+          brightness: 1.0,
+          contrast: 1.0,
+          saturation: 1.0,
+          hue: 0,
+          blur: 0,
+          grayscale: 0,
+          invert: 0,
+          sepia: 0,
+        },
+        fxB: {
+          brightness: 1.0,
+          contrast: 1.0,
+          saturation: 1.0,
+          hue: 0,
+          blur: 0,
+          grayscale: 0,
+          invert: 0,
+          sepia: 0,
+        },
+        opacityA: 1.0,
+        opacityB: 1.0,
+        crossfader: 0.5,
+        blendMode: "cross",
+        masterBrightness: 1.0,
+        beatFlashEnabled: false,
+        beatZoomEnabled: false,
+        trailEnabled: false,
+        trailDecay: 0.85,
+        mirrorA: false,
+        mirrorB: false,
+        tileModeA: null,
+        tileModeB: null,
+        transformA: { posX: 0, posY: 0, scale: 1 },
+        transformB: { posX: 0, posY: 0, scale: 1 },
+      };
+      const neon = {
+        fxA: {
+          brightness: 1.1,
+          contrast: 1.3,
+          saturation: 2.5,
+          hue: 0,
+          blur: 0,
+          grayscale: 0,
+          invert: 0,
+          sepia: 0,
+        },
+        fxB: {
+          brightness: 1.0,
+          contrast: 1.2,
+          saturation: 3.0,
+          hue: 90,
+          blur: 0,
+          grayscale: 0,
+          invert: 0.05,
+          sepia: 0,
+        },
+        opacityA: 1.0,
+        opacityB: 1.0,
+        crossfader: 0.5,
+        blendMode: "screen",
+        masterBrightness: 1.0,
+        beatFlashEnabled: true,
+        beatZoomEnabled: false,
+        trailEnabled: false,
+        trailDecay: 0.85,
+        mirrorA: false,
+        mirrorB: false,
+        tileModeA: null,
+        tileModeB: null,
+        transformA: { posX: 0, posY: 0, scale: 1 },
+        transformB: { posX: 0, posY: 0, scale: 1 },
+      };
+      const noir = {
+        fxA: {
+          brightness: 0.9,
+          contrast: 1.5,
+          saturation: 0.1,
+          hue: 0,
+          blur: 0,
+          grayscale: 0.8,
+          invert: 0,
+          sepia: 0.15,
+        },
+        fxB: {
+          brightness: 0.9,
+          contrast: 1.5,
+          saturation: 0.1,
+          hue: 0,
+          blur: 0,
+          grayscale: 0.8,
+          invert: 0,
+          sepia: 0.15,
+        },
+        opacityA: 1.0,
+        opacityB: 1.0,
+        crossfader: 0.5,
+        blendMode: "multiply",
+        masterBrightness: 1.0,
+        beatFlashEnabled: false,
+        beatZoomEnabled: false,
+        trailEnabled: true,
+        trailDecay: 0.85,
+        mirrorA: false,
+        mirrorB: false,
+        tileModeA: null,
+        tileModeB: null,
+        transformA: { posX: 0, posY: 0, scale: 1 },
+        transformB: { posX: 0, posY: 0, scale: 1 },
+      };
+      const hype = {
+        fxA: {
+          brightness: 1.1,
+          contrast: 1.3,
+          saturation: 2.5,
+          hue: 0,
+          blur: 0,
+          grayscale: 0,
+          invert: 0,
+          sepia: 0,
+        },
+        fxB: {
+          brightness: 0.95,
+          contrast: 1.1,
+          saturation: 0.85,
+          hue: -20,
+          blur: 0,
+          grayscale: 0,
+          invert: 0,
+          sepia: 0,
+        },
+        opacityA: 1.0,
+        opacityB: 1.0,
+        crossfader: 0.5,
+        blendMode: "add",
+        masterBrightness: 1.0,
+        beatFlashEnabled: true,
+        beatZoomEnabled: true,
+        trailEnabled: false,
+        trailDecay: 0.85,
+        mirrorA: true,
+        mirrorB: false,
+        tileModeA: null,
+        tileModeB: null,
+        transformA: { posX: 0, posY: 0, scale: 1 },
+        transformB: { posX: 0, posY: 0, scale: 1 },
+      };
+      const templates = [clean, neon, noir, hype];
+      for (let i = 0; i < templates.length; i++) {
+        this.$set(this.scenePresets, i, templates[i]);
+      }
+      this._persistPresets();
+      this.templatesLoaded = true;
+    },
+
+    closeWizard() {
+      this.showWizard = false;
+      try {
+        window.localStorage.setItem("grackle-wizard-done", "1");
+      } catch (_e) {
+        /* quota */
       }
     },
 
@@ -5197,5 +5530,290 @@ export default {
     min-height: 0;
     height: auto;
   }
+}
+
+/* ── Wizard help button ──────────────────────────────── */
+.wizard-help-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.7rem;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  flex-shrink: 0;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.wizard-help-btn:hover {
+  border-color: rgba(93, 255, 147, 0.6);
+  color: rgba(93, 255, 147, 0.9);
+}
+
+/* ── Wizard overlay ─────────────────────────────────── */
+.wizard-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+}
+
+.wizard-panel {
+  background: #1a1d24;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  padding: 28px 32px 22px;
+  width: 480px;
+  max-width: calc(100vw - 48px);
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.85);
+  position: relative;
+}
+
+.wizard-steps {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+.wizard-step-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  transition: background 180ms ease;
+}
+.wizard-step-dot-active {
+  background: rgba(93, 255, 147, 0.85);
+}
+
+.wizard-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.wizard-body {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.55;
+}
+.wizard-body p {
+  margin: 0 0 12px;
+}
+.wizard-body strong {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.wizard-hint {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 8px !important;
+}
+
+/* diagram */
+.wizard-diagram {
+  display: flex;
+  gap: 6px;
+  margin: 14px 0;
+  align-items: center;
+  justify-content: center;
+}
+.wd-box {
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.4;
+}
+.wd-sub {
+  font-weight: 400;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  opacity: 0.65;
+}
+.wd-deck {
+  background: rgba(93, 255, 147, 0.1);
+  border: 1px solid rgba(93, 255, 147, 0.3);
+  color: rgba(93, 255, 147, 0.9);
+  flex: 1;
+}
+.wd-cf {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+/* how-to list */
+.wizard-how-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+.wizard-how-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.wizard-how-icon {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 3px 7px;
+  flex-shrink: 0;
+  min-width: 44px;
+  text-align: center;
+}
+.wizard-how-item kbd {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.68rem;
+  font-family: monospace;
+  color: #fff;
+}
+
+/* templates list */
+.wizard-templates {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 18px;
+}
+.wizard-template-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+}
+.wt-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(93, 255, 147, 0.12);
+  border: 1px solid rgba(93, 255, 147, 0.3);
+  color: rgba(93, 255, 147, 0.9);
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.wt-name {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #fff;
+  width: 46px;
+  flex-shrink: 0;
+}
+.wt-desc {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.73rem;
+}
+
+.wizard-load-btn {
+  background: rgba(93, 255, 147, 0.12);
+  border: 1px solid rgba(93, 255, 147, 0.45);
+  border-radius: 7px;
+  color: rgba(93, 255, 147, 0.95);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+  width: 100%;
+}
+.wizard-load-btn:hover {
+  background: rgba(93, 255, 147, 0.22);
+  border-color: rgba(93, 255, 147, 0.7);
+}
+.wizard-load-btn-done {
+  background: rgba(93, 255, 147, 0.22);
+  border-color: rgba(93, 255, 147, 0.7);
+  cursor: default;
+}
+
+/* navigation */
+.wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 22px;
+  gap: 10px;
+}
+.wizard-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 7px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 7px 18px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.wizard-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.38);
+}
+.wizard-btn-ghost {
+  background: none;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.45);
+}
+.wizard-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.wizard-skip {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+.wizard-skip:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* transition */
+.wizard-fade-enter-active,
+.wizard-fade-leave-active {
+  transition: opacity 180ms ease;
+}
+.wizard-fade-enter,
+.wizard-fade-leave-to {
+  opacity: 0;
 }
 </style>
