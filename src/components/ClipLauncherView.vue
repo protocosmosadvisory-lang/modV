@@ -298,6 +298,48 @@
         />
         <button class="fx-reset-btn" @click="resetFx('A')">↺</button>
       </div>
+      <div v-if="showFxA" class="deck-transform-row">
+        <label class="fx-label">X</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="-1"
+          max="1"
+          step="0.01"
+          :value="transformA.posX"
+          @input="updateTransform('A', 'posX', $event.target.value)"
+          @dblclick="resetTransform('A', 'posX')"
+        />
+        <label class="fx-label">Y</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="-1"
+          max="1"
+          step="0.01"
+          :value="transformA.posY"
+          @input="updateTransform('A', 'posY', $event.target.value)"
+          @dblclick="resetTransform('A', 'posY')"
+        />
+        <label class="fx-label">SCL</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0.1"
+          max="3"
+          step="0.05"
+          :value="transformA.scale"
+          @input="updateTransform('A', 'scale', $event.target.value)"
+          @dblclick="resetTransform('A', 'scale')"
+        />
+        <button
+          class="fx-reset-btn"
+          @click="resetTransformAll('A')"
+          title="Reset X/Y/Scale"
+        >
+          ↺
+        </button>
+      </div>
       <div class="deck-grid">
         <button
           v-for="slot in flatDeckA"
@@ -818,6 +860,48 @@
         />
         <button class="fx-reset-btn" @click="resetFx('B')">↺</button>
       </div>
+      <div v-if="showFxB" class="deck-transform-row">
+        <label class="fx-label">X</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="-1"
+          max="1"
+          step="0.01"
+          :value="transformB.posX"
+          @input="updateTransform('B', 'posX', $event.target.value)"
+          @dblclick="resetTransform('B', 'posX')"
+        />
+        <label class="fx-label">Y</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="-1"
+          max="1"
+          step="0.01"
+          :value="transformB.posY"
+          @input="updateTransform('B', 'posY', $event.target.value)"
+          @dblclick="resetTransform('B', 'posY')"
+        />
+        <label class="fx-label">SCL</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0.1"
+          max="3"
+          step="0.05"
+          :value="transformB.scale"
+          @input="updateTransform('B', 'scale', $event.target.value)"
+          @dblclick="resetTransform('B', 'scale')"
+        />
+        <button
+          class="fx-reset-btn"
+          @click="resetTransformAll('B')"
+          title="Reset X/Y/Scale"
+        >
+          ↺
+        </button>
+      </div>
       <div class="deck-grid">
         <button
           v-for="slot in flatDeckB"
@@ -977,6 +1061,8 @@ export default {
       mirrorB: false,
       tileModeA: null,
       tileModeB: null,
+      transformA: { posX: 0, posY: 0, scale: 1 },
+      transformB: { posX: 0, posY: 0, scale: 1 },
       trailEnabled: false,
       trailDecay: 0.85,
       scenePresets: [null, null, null, null],
@@ -1543,6 +1629,10 @@ export default {
       deckMixer.setTileMode("A", null);
       deckMixer.setTileMode("B", null);
 
+      // Reset deck transforms
+      this.resetTransformAll("A");
+      this.resetTransformAll("B");
+
       // Reset trail
       this.trailEnabled = false;
       deckMixer.setTrail(false);
@@ -1992,6 +2082,8 @@ export default {
         mirrorB: this.mirrorB,
         tileModeA: this.tileModeA,
         tileModeB: this.tileModeB,
+        transformA: { ...this.transformA },
+        transformB: { ...this.transformB },
       };
     },
 
@@ -2068,6 +2160,16 @@ export default {
         this.tileModeB = scene.tileModeB;
         deckMixer.setTileMode("B", scene.tileModeB);
       }
+
+      if (scene.transformA) {
+        this.transformA = { ...scene.transformA };
+        deckMixer.setDeckTransform("A", scene.transformA);
+      }
+
+      if (scene.transformB) {
+        this.transformB = { ...scene.transformB };
+        deckMixer.setDeckTransform("B", scene.transformB);
+      }
     },
 
     _persistPresets() {
@@ -2110,6 +2212,30 @@ export default {
       }
 
       this._presetLongPressIndex = null;
+    },
+
+    updateTransform(deck, param, rawValue) {
+      const val = parseFloat(rawValue);
+      const t = deck === "A" ? this.transformA : this.transformB;
+      t[param] = val;
+      deckMixer.setDeckTransform(deck, { [param]: val });
+    },
+
+    resetTransform(deck, param) {
+      const defaults = { posX: 0, posY: 0, scale: 1 };
+      const t = deck === "A" ? this.transformA : this.transformB;
+      t[param] = defaults[param];
+      deckMixer.setDeckTransform(deck, { [param]: defaults[param] });
+    },
+
+    resetTransformAll(deck) {
+      if (deck === "A") {
+        this.transformA = { posX: 0, posY: 0, scale: 1 };
+      } else {
+        this.transformB = { posX: 0, posY: 0, scale: 1 };
+      }
+
+      deckMixer.setDeckTransform(deck, { posX: 0, posY: 0, scale: 1 });
     },
 
     seekFromPreviewClick(event) {
@@ -3124,6 +3250,24 @@ export default {
   border-radius: 50%;
   background: #5dff93;
   box-shadow: 0 0 4px rgba(93, 255, 147, 0.6);
+}
+
+/* Deck transform row (X / Y / scale) */
+.deck-transform-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 2px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  margin-bottom: 2px;
+}
+
+.deck-transform-row .fx-label {
+  color: rgba(120, 200, 255, 0.7);
+}
+
+.deck-transform-row .fx-slider {
+  accent-color: rgba(120, 200, 255, 0.7);
 }
 
 /* Tile mode button */

@@ -86,6 +86,14 @@ class DeckMixer {
     // Per-deck tile mode: null | "2x2" | "mirror4"
     this.tileModeA = null;
     this.tileModeB = null;
+
+    // Per-deck position offset (normalized, -1..1) and scale (0.25..2)
+    this._posXA = 0;
+    this._posYA = 0;
+    this._scaleA = 1;
+    this._posXB = 0;
+    this._posYB = 0;
+    this._scaleB = 1;
   }
 
   setBlackout(active) {
@@ -104,6 +112,42 @@ class DeckMixer {
     } else {
       this.mirrorB = Boolean(enabled);
     }
+  }
+
+  setDeckTransform(deck, { posX, posY, scale } = {}) {
+    if (deck === "A") {
+      if (posX !== undefined) {
+        this._posXA = Math.max(-1, Math.min(1, Number(posX) || 0));
+      }
+
+      if (posY !== undefined) {
+        this._posYA = Math.max(-1, Math.min(1, Number(posY) || 0));
+      }
+
+      if (scale !== undefined) {
+        this._scaleA = Math.max(0.1, Math.min(3, Number(scale) || 1));
+      }
+    } else {
+      if (posX !== undefined) {
+        this._posXB = Math.max(-1, Math.min(1, Number(posX) || 0));
+      }
+
+      if (posY !== undefined) {
+        this._posYB = Math.max(-1, Math.min(1, Number(posY) || 0));
+      }
+
+      if (scale !== undefined) {
+        this._scaleB = Math.max(0.1, Math.min(3, Number(scale) || 1));
+      }
+    }
+  }
+
+  getDeckTransform(deck) {
+    if (deck === "A") {
+      return { posX: this._posXA, posY: this._posYA, scale: this._scaleA };
+    }
+
+    return { posX: this._posXB, posY: this._posYB, scale: this._scaleB };
   }
 
   setTileMode(deck, mode) {
@@ -261,7 +305,32 @@ class DeckMixer {
    * Assumes ctx.globalAlpha, ctx.filter, ctx.globalCompositeOperation
    * are already set by the caller.
    */
-  _drawDeck(ctx, srcCanvas, mirror, tileMode, zx, zy, zw, zh, w, h) {
+  _drawDeck(
+    ctx,
+    srcCanvas,
+    mirror,
+    tileMode,
+    zx,
+    zy,
+    zw,
+    zh,
+    w,
+    h,
+    posX,
+    posY,
+    deckScale
+  ) {
+    // Apply per-deck position and scale around the canvas center
+    const hasTransform =
+      (posX !== 0 || posY !== 0 || deckScale !== 1) && posX !== undefined;
+
+    if (hasTransform) {
+      ctx.save();
+      ctx.translate(w / 2 + posX * w * 0.5, h / 2 + posY * h * 0.5);
+      ctx.scale(deckScale, deckScale);
+      ctx.translate(-w / 2, -h / 2);
+    }
+
     if (!tileMode) {
       // Simple draw with optional mirror
       if (mirror) {
@@ -272,6 +341,10 @@ class DeckMixer {
         ctx.restore();
       } else {
         ctx.drawImage(srcCanvas, zx, zy, zw, zh);
+      }
+
+      if (hasTransform) {
+        ctx.restore();
       }
 
       return;
@@ -320,6 +393,10 @@ class DeckMixer {
       ctx.translate(w, h);
       ctx.scale(-1, -1);
       ctx.drawImage(srcCanvas, 0, 0, hw, hh);
+      ctx.restore();
+    }
+
+    if (hasTransform) {
       ctx.restore();
     }
   }
@@ -460,7 +537,10 @@ class DeckMixer {
         zw,
         zh,
         w,
-        h
+        h,
+        this._posXA,
+        this._posYA,
+        this._scaleA
       );
     }
 
@@ -479,7 +559,10 @@ class DeckMixer {
         zw,
         zh,
         w,
-        h
+        h,
+        this._posXB,
+        this._posYB,
+        this._scaleB
       );
     }
 
