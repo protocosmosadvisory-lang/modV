@@ -123,6 +123,17 @@
           Apply
         </button>
         <button
+          v-if="popover.hasClip"
+          type="button"
+          class="popover-copy"
+          :title="`Copy clip to same slot on Deck ${
+            popover.deck === 'A' ? 'B' : 'A'
+          }`"
+          @click="copySlotToOtherDeck"
+        >
+          → {{ popover.deck === "A" ? "B" : "A" }}
+        </button>
+        <button
           v-if="popover.hasMidiBinding"
           type="button"
           class="popover-midi"
@@ -2672,6 +2683,38 @@ export default {
       this.closePopover();
     },
 
+    copySlotToOtherDeck() {
+      if (!this.popover.slot || !this.popover.hasClip) {
+        return;
+      }
+
+      const { deck, slot } = this.popover;
+      const { row, col } = parseSlotId(slot.id);
+      const targetDeck = deck === "A" ? "B" : "A";
+      const source = slot.source;
+
+      if (!source) {
+        return;
+      }
+
+      clipLauncher.loadClip(targetDeck, row, col, {
+        name: source.name,
+        path: source.path,
+        url: source.url,
+        duration: source.duration || 0,
+      });
+
+      clipLauncher.updateSlotSettings(targetDeck, row, col, {
+        loopMode: slot.loopMode || "loop",
+        speed: slot.speed || 1.0,
+        bpmSyncBeats: slot.bpmSyncBeats || 0,
+        loopIn: slot.loopIn || 0,
+        loopOut: slot.loopOut !== undefined ? slot.loopOut : 1,
+      });
+
+      this.closePopover();
+    },
+
     clearPopoverSlot() {
       if (!this.popover.slot || !this.popover.hasClip) {
         return;
@@ -3789,6 +3832,21 @@ export default {
 
 .popover-clear:hover {
   background: rgba(255, 60, 60, 0.22);
+}
+
+.popover-copy {
+  font-size: 0.7rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(80, 160, 255, 0.4);
+  background: rgba(60, 100, 255, 0.1);
+  color: rgba(120, 180, 255, 0.9);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.popover-copy:hover {
+  background: rgba(60, 100, 255, 0.22);
 }
 
 .crossfader-column {
