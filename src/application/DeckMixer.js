@@ -900,6 +900,40 @@ class DeckMixer {
     };
   }
 
+  setResolution(width, height) {
+    const w = Math.round(width) || 1280;
+    const h = Math.round(height) || 720;
+
+    if (this._canvas && this._canvas.width === w && this._canvas.height === h) {
+      return;
+    }
+
+    if (this._canvas) {
+      this._canvas.width = w;
+      this._canvas.height = h;
+    }
+
+    if (this._pixCanvas) {
+      this._pixCanvas.width = w;
+      this._pixCanvas.height = h;
+    }
+
+    if (this._outCanvas) {
+      this._outCanvas.width = w;
+      this._outCanvas.height = h;
+
+      // Restart the capture stream so track reflects new dimensions
+      const newStream = this._outCanvas.captureStream(60);
+      this._stream = newStream;
+      const [track] = newStream.getVideoTracks();
+      this._track = track || null;
+
+      if (track && this.modV) {
+        this.modV._imageCapture = new ImageCapture(track);
+      }
+    }
+  }
+
   _buildMasterFilter() {
     const parts = [];
 

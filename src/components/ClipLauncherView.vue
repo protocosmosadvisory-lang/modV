@@ -845,6 +845,21 @@
         </div>
       </div>
 
+      <!-- Output resolution selector -->
+      <div class="res-row">
+        <button
+          v-for="r in outputResolutions"
+          :key="r.label"
+          type="button"
+          class="res-btn"
+          :class="{ 'res-btn-active': outputResolution === r.label }"
+          :title="`Output resolution: ${r.w}x${r.h}`"
+          @click="setOutputResolution(r)"
+        >
+          {{ r.label }}
+        </button>
+      </div>
+
       <!-- REC button -->
       <button
         type="button"
@@ -1498,6 +1513,12 @@ export default {
       masterHue: 0,
       isRecording: false,
       recordElapsed: 0,
+      outputResolution: "720p",
+      outputResolutions: [
+        { label: "720p", w: 1280, h: 720 },
+        { label: "1080p", w: 1920, h: 1080 },
+        { label: "480p", w: 854, h: 480 },
+      ],
       scenePresets: [null, null, null, null],
       showFxA: false,
       showFxB: false,
@@ -3157,6 +3178,11 @@ export default {
       }
     },
 
+    setOutputResolution(r) {
+      this.outputResolution = r.label;
+      deckMixer.setResolution(r.w, r.h);
+    },
+
     saveSession() {
       const state = this.$store.state["clip-launcher"];
       const slots = {};
@@ -4495,6 +4521,37 @@ export default {
   50% {
     box-shadow: 0 0 18px rgba(255, 200, 64, 0.4);
   }
+}
+
+/* Output resolution selector */
+.res-row {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 5px;
+}
+
+.res-btn {
+  flex: 1;
+  padding: 3px 2px;
+  font-size: 9px;
+  font-weight: 700;
+  background: #1a1a2e;
+  border: 1px solid #444;
+  color: #888;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+
+.res-btn:hover {
+  background: #252540;
+  color: #ccc;
+}
+
+.res-btn-active {
+  background: #2a2a50;
+  border-color: #6666cc;
+  color: #aaf;
 }
 
 /* Session save/load */
