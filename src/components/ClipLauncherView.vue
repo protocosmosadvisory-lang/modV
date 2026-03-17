@@ -70,6 +70,49 @@
         </div>
       </template>
 
+      <template v-if="popover.hasClip">
+        <label class="popover-label">
+          IN
+          <span class="popover-value"
+            >{{ Math.round(popover.loopIn * 100) }}%</span
+          >
+        </label>
+        <input
+          type="range"
+          class="popover-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="popover.loopIn"
+          @input="
+            popover.loopIn = Math.min(
+              parseFloat($event.target.value),
+              popover.loopOut - 0.01
+            )
+          "
+        />
+        <label class="popover-label">
+          OUT
+          <span class="popover-value"
+            >{{ Math.round(popover.loopOut * 100) }}%</span
+          >
+        </label>
+        <input
+          type="range"
+          class="popover-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="popover.loopOut"
+          @input="
+            popover.loopOut = Math.max(
+              parseFloat($event.target.value),
+              popover.loopIn + 0.01
+            )
+          "
+        />
+      </template>
+
       <div class="popover-actions">
         <button
           v-if="popover.hasClip"
@@ -1367,6 +1410,8 @@ export default {
         loopMode: "loop",
         bpmSyncBeats: 0,
         speed: 1.0,
+        loopIn: 0,
+        loopOut: 1,
         hasClip: false,
         hasMidiBinding: false,
         style: {},
@@ -2567,6 +2612,8 @@ export default {
         loopMode: slot.loopMode || "loop",
         speed: slot.speed || 1.0,
         bpmSyncBeats: slot.bpmSyncBeats || 0,
+        loopIn: slot.loopIn || 0,
+        loopOut: slot.loopOut !== undefined ? slot.loopOut : 1,
         hasClip: this.slotHasPlayableSource(slot),
         hasMidiBinding,
         style: { top: `${top}px`, left: `${left}px` },
@@ -2590,13 +2637,16 @@ export default {
         return;
       }
 
-      const { deck, slot, loopMode, speed, bpmSyncBeats } = this.popover;
+      const { deck, slot, loopMode, speed, bpmSyncBeats, loopIn, loopOut } =
+        this.popover;
       const { row, col } = parseSlotId(slot.id);
 
       clipLauncher.updateSlotSettings(deck, row, col, {
         loopMode,
         speed,
         bpmSyncBeats,
+        loopIn,
+        loopOut,
       });
       this.closePopover();
     },
@@ -3131,6 +3181,8 @@ export default {
                 loopMode: slot.loopMode,
                 speed: slot.speed,
                 bpmSyncBeats: slot.bpmSyncBeats || 0,
+                loopIn: slot.loopIn || 0,
+                loopOut: slot.loopOut !== undefined ? slot.loopOut : 1,
               });
             }
           }
@@ -3226,17 +3278,13 @@ export default {
           };
           try {
             await clipLauncher.loadClip(deck, entry.row, entry.col, source);
-            if (
-              entry.loopMode ||
-              entry.speed !== undefined ||
-              entry.bpmSyncBeats !== undefined
-            ) {
-              clipLauncher.updateSlotSettings(deck, entry.row, entry.col, {
-                loopMode: entry.loopMode || "loop",
-                speed: entry.speed || 1.0,
-                bpmSyncBeats: entry.bpmSyncBeats || 0,
-              });
-            }
+            clipLauncher.updateSlotSettings(deck, entry.row, entry.col, {
+              loopMode: entry.loopMode || "loop",
+              speed: entry.speed || 1.0,
+              bpmSyncBeats: entry.bpmSyncBeats || 0,
+              loopIn: entry.loopIn || 0,
+              loopOut: entry.loopOut !== undefined ? entry.loopOut : 1,
+            });
           } catch (err) {
             console.warn(
               "[Grackle] Session load: failed slot",

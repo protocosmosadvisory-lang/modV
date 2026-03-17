@@ -165,6 +165,8 @@ class ClipLauncher {
     player.play(slot.source, {
       loopMode: slot.loopMode || "loop",
       speed: computedSpeed,
+      loopIn: slot.loopIn || 0,
+      loopOut: slot.loopOut !== undefined ? slot.loopOut : 1,
     });
 
     const activeSlot = this.getSlot(normalizedDeck, row, col);
@@ -213,7 +215,12 @@ class ClipLauncher {
     });
   }
 
-  updateSlotSettings(deck, row, col, { loopMode, speed, bpmSyncBeats } = {}) {
+  updateSlotSettings(
+    deck,
+    row,
+    col,
+    { loopMode, speed, bpmSyncBeats, loopIn, loopOut } = {}
+  ) {
     const normalizedDeck = normalizeDeck(deck);
 
     store.commit("clip-launcher/UPDATE_SLOT_SETTINGS", {
@@ -223,6 +230,8 @@ class ClipLauncher {
       loopMode,
       speed,
       bpmSyncBeats,
+      loopIn,
+      loopOut,
     });
 
     const slot = this.getSlot(normalizedDeck, row, col);

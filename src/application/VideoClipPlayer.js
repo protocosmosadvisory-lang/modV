@@ -23,6 +23,8 @@ export class VideoClipPlayer {
     this.speed = 1.0;
     this._active = false;
     this._reversed = false;
+    this._loopIn = 0;
+    this._loopOut = 1;
   }
 
   get currentTime() {
@@ -48,7 +50,10 @@ export class VideoClipPlayer {
   }
 
   /** Play a File or source object through this player's canvas. */
-  async play(source, { loopMode = "loop", speed = 1.0 } = {}) {
+  async play(
+    source,
+    { loopMode = "loop", speed = 1.0, loopIn = 0, loopOut = 1 } = {}
+  ) {
     this.stop();
 
     if (!source) {
@@ -57,6 +62,14 @@ export class VideoClipPlayer {
 
     this.loopMode = LOOP_MODES.includes(loopMode) ? loopMode : "loop";
     this.speed = Math.max(0.05, Math.min(32, Number(speed) || 1));
+    this._loopIn = Math.max(0, Math.min(1, Number(loopIn) || 0));
+    this._loopOut = Math.max(
+      0,
+      Math.min(1, Number(loopOut) !== undefined ? Number(loopOut) : 1)
+    );
+    if (this._loopOut <= this._loopIn) {
+      this._loopOut = 1;
+    }
 
     const url =
       source instanceof File
@@ -112,10 +125,17 @@ export class VideoClipPlayer {
       }
 
       if (video.readyState >= 2) {
-        if (this._reversed && isFinite(video.duration) && video.duration > 0) {
-          const step = Math.max(0.016, this.speed / 30);
-          const next = video.currentTime - step;
-          video.currentTime = next <= 0 ? video.duration : next;
+        const dur = video.duration;
+        if (isFinite(dur) && dur > 0) {
+          const inT = this._loopIn * dur;
+          const outT = this._loopOut * dur;
+          if (this._reversed) {
+            const step = Math.max(0.016, this.speed / 30);
+            const next = video.currentTime - step;
+            video.currentTime = next <= inT ? outT : next;
+          } else if (this.loopMode === "loop" && video.currentTime >= outT) {
+            video.currentTime = inT;
+          }
         }
 
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -255,6 +275,8 @@ export class VideoClipPlayer {
   stop() {
     this._active = false;
     this._reversed = false;
+    this._loopIn = 0;
+    this._loopOut = 1;
 
     if (this._raf) {
       cancelAnimationFrame(this._raf);
