@@ -50,11 +50,21 @@ class DeckMixer {
     this._masterOpacity = 1.0;
     this._targetMasterOpacity = 1.0;
     this.blackout = false;
+
+    // Master whiteout (0 = no white, 1 = full white)
+    this._masterWhite = 0;
+    this._targetMasterWhite = 0;
+    this.whiteout = false;
   }
 
   setBlackout(active) {
     this.blackout = active;
     this._targetMasterOpacity = active ? 0 : 1;
+  }
+
+  setWhiteout(active) {
+    this.whiteout = active;
+    this._targetMasterWhite = active ? 1 : 0;
   }
 
   setMasterOpacity(value) {
@@ -292,6 +302,23 @@ class DeckMixer {
       ctx.filter = "none";
       ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    // Animate whiteout
+    const whiteDiff = this._targetMasterWhite - this._masterWhite;
+
+    if (Math.abs(whiteDiff) > 0.002) {
+      this._masterWhite += whiteDiff * 0.15;
+    } else {
+      this._masterWhite = this._targetMasterWhite;
+    }
+
+    if (this._masterWhite > 0.001) {
+      ctx.globalAlpha = this._masterWhite;
+      ctx.filter = "none";
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, w, h);
     }
 

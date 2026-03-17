@@ -433,11 +433,22 @@ export default {
       if (key === "o") {
         this.openOutputWindow();
       }
+
+      // W: whiteout (hold)
+      if (key === "w") {
+        deckMixer.setWhiteout(true);
+      }
     },
 
     handleGlobalKeyup(event) {
-      if (event.key.toLowerCase() === "b") {
+      const key = event.key.toLowerCase();
+
+      if (key === "b") {
         deckMixer.setBlackout(false);
+      }
+
+      if (key === "w") {
+        deckMixer.setWhiteout(false);
       }
     },
 
