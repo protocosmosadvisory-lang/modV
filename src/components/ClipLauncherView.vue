@@ -140,6 +140,19 @@
         </button>
         <button
           type="button"
+          class="deck-stutter-btn"
+          :class="{ 'deck-stutter-active': stutteringDeck === 'A' }"
+          title="Stutter — hold to loop current frame rapidly"
+          @mousedown.prevent="startStutter('A')"
+          @mouseup="stopStutter"
+          @mouseleave="stopStutter"
+          @touchstart.prevent="startStutter('A')"
+          @touchend.prevent="stopStutter"
+        >
+          STUT
+        </button>
+        <button
+          type="button"
           class="deck-fx-toggle"
           :class="{ 'deck-fx-open': showFxA }"
           title="Toggle color effects"
@@ -271,6 +284,21 @@
           @click="triggerRow(row - 1)"
         >
           {{ row }}
+        </button>
+      </div>
+
+      <!-- Stutter beat division -->
+      <div class="auto-div-row">
+        <span class="auto-div-label">STUT</span>
+        <button
+          v-for="d in stutterDivisions"
+          :key="d.value"
+          type="button"
+          class="auto-div-btn"
+          :class="{ 'auto-div-active': stutterDivision === d.value }"
+          @click="stutterDivision = d.value"
+        >
+          {{ d.label }}
         </button>
       </div>
 
@@ -454,6 +482,19 @@
           @click="toggleFreeze('B')"
         >
           ❄
+        </button>
+        <button
+          type="button"
+          class="deck-stutter-btn"
+          :class="{ 'deck-stutter-active': stutteringDeck === 'B' }"
+          title="Stutter — hold to loop current frame rapidly"
+          @mousedown.prevent="startStutter('B')"
+          @mouseup="stopStutter"
+          @mouseleave="stopStutter"
+          @touchstart.prevent="startStutter('B')"
+          @touchend.prevent="stopStutter"
+        >
+          STUT
         </button>
         <button
           type="button"
@@ -664,6 +705,13 @@ export default {
       opacityB: 1.0,
       frozenA: false,
       frozenB: false,
+      stutteringDeck: null,
+      stutterDivision: 8, // 1/Nth beat
+      stutterDivisions: [
+        { label: "1/4", value: 4 },
+        { label: "1/8", value: 8 },
+        { label: "1/16", value: 16 },
+      ],
       autoTriggerA: false,
       autoTriggerB: false,
       autoTriggerDivision: 1,
@@ -743,6 +791,7 @@ export default {
     }
     document.removeEventListener("click", this.closePopover);
     document.removeEventListener("keydown", this.onKeyDown);
+    this.stopStutter();
     this.cancelLongPress();
     this.cancelMidiLearnMode();
     this.stopLfo();
@@ -1215,6 +1264,36 @@ export default {
           clipLauncher.triggerClip(deck, r, c);
         }
       }
+    },
+
+    startStutter(deck) {
+      this.stopStutter();
+
+      const player = deck === "A" ? deckMixer.playerA : deckMixer.playerB;
+
+      if (!player.isPlaying || !player._video) {
+        return;
+      }
+
+      const bpm = this.$modV?.store?.state?.beats?.bpm ?? 120;
+      const periodMs = (60 / bpm / this.stutterDivision) * 1000;
+      const startTime = player._video.currentTime;
+
+      this.stutteringDeck = deck;
+      this._stutterInterval = setInterval(() => {
+        if (player._video) {
+          player._video.currentTime = startTime;
+        }
+      }, periodMs);
+    },
+
+    stopStutter() {
+      if (this._stutterInterval) {
+        clearInterval(this._stutterInterval);
+        this._stutterInterval = null;
+      }
+
+      this.stutteringDeck = null;
     },
 
     toggleAutoTrigger(deck) {
@@ -2262,6 +2341,45 @@ export default {
   }
   50% {
     opacity: 0.75;
+  }
+}
+
+/* Stutter button */
+.deck-stutter-btn {
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  user-select: none;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.deck-stutter-btn:hover {
+  border-color: rgba(255, 100, 255, 0.5);
+  color: rgba(255, 120, 255, 0.8);
+}
+
+.deck-stutter-active {
+  border-color: #ff66ff;
+  color: #ff66ff;
+  background: rgba(255, 80, 255, 0.12);
+  box-shadow: 0 0 12px rgba(255, 80, 255, 0.25);
+  animation: stutter-glow 100ms step-start infinite;
+}
+
+@keyframes stutter-glow {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  25%,
+  75% {
+    opacity: 0.6;
   }
 }
 
