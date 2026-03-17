@@ -119,6 +119,15 @@
         </button>
         <button
           type="button"
+          class="deck-auto-btn"
+          :class="{ 'deck-auto-active': autoTriggerA }"
+          title="Auto-trigger random clips on beat"
+          @click="toggleAutoTrigger('A')"
+        >
+          AUTO
+        </button>
+        <button
+          type="button"
           class="sync-toggle midi-toggle"
           :class="{ 'sync-toggle-active': midiLearnDeck === 'A' }"
           @click="toggleMidiLearnMode('A')"
@@ -232,6 +241,21 @@
           @click="triggerRow(row - 1)"
         >
           {{ row }}
+        </button>
+      </div>
+
+      <!-- Auto-trigger beat division: how many beats between triggers -->
+      <div v-if="autoTriggerA || autoTriggerB" class="auto-div-row">
+        <span class="auto-div-label">AUTO /</span>
+        <button
+          v-for="d in autoTriggerDivisions"
+          :key="d.value"
+          type="button"
+          class="auto-div-btn"
+          :class="{ 'auto-div-active': autoTriggerDivision === d.value }"
+          @click="autoTriggerDivision = d.value"
+        >
+          {{ d.label }}
         </button>
       </div>
 
@@ -403,6 +427,15 @@
         </button>
         <button
           type="button"
+          class="deck-auto-btn"
+          :class="{ 'deck-auto-active': autoTriggerB }"
+          title="Auto-trigger random clips on beat"
+          @click="toggleAutoTrigger('B')"
+        >
+          AUTO
+        </button>
+        <button
+          type="button"
           class="sync-toggle midi-toggle"
           :class="{ 'sync-toggle-active': midiLearnDeck === 'B' }"
           @click="toggleMidiLearnMode('B')"
@@ -507,6 +540,7 @@
 import deckMixer from "../application/DeckMixer";
 import midiBindingService from "../application/MidiBindingService";
 import clipLauncher from "../media-manager/ClipLauncher";
+import BeatSync from "../application/BeatSync";
 
 const LOOP_MODES = [
   { label: "Loop", value: "loop" },
@@ -581,6 +615,15 @@ export default {
       lfoInterval: null,
       opacityA: 1.0,
       opacityB: 1.0,
+      autoTriggerA: false,
+      autoTriggerB: false,
+      autoTriggerDivision: 1,
+      autoTriggerDivisions: [
+        { label: "1", value: 1 },
+        { label: "2", value: 2 },
+        { label: "4", value: 4 },
+        { label: "8", value: 8 },
+      ],
       masterSpeedA: 1.0,
       masterSpeedB: 1.0,
       blendMode: "cross",
@@ -608,6 +651,8 @@ export default {
   },
 
   mounted() {
+    this._autoTriggerBeatCount = 0;
+    this._beatUnsubscribe = BeatSync.on("beat", () => this.onAutoTriggerBeat());
     this.lastKickState = Boolean(this.$modV?.store?.state?.beats?.kick);
     this.beatPollInterval = setInterval(this.pollBeatState, 1000 / 60);
     this.progressInterval = setInterval(() => {
@@ -627,6 +672,11 @@ export default {
   },
 
   beforeDestroy() {
+    if (this._beatUnsubscribe) {
+      this._beatUnsubscribe();
+      this._beatUnsubscribe = null;
+    }
+
     clearInterval(this.beatPollInterval);
     this.beatPollInterval = null;
     clearInterval(this.progressInterval);
@@ -1088,6 +1138,53 @@ export default {
 
           clipLauncher.triggerClip(deck, r, c);
         }
+      }
+    },
+
+    toggleAutoTrigger(deck) {
+      if (deck === "A") {
+        this.autoTriggerA = !this.autoTriggerA;
+      } else {
+        this.autoTriggerB = !this.autoTriggerB;
+      }
+    },
+
+    onAutoTriggerBeat() {
+      this._autoTriggerBeatCount = (this._autoTriggerBeatCount || 0) + 1;
+
+      if (this._autoTriggerBeatCount % this.autoTriggerDivision !== 0) {
+        return;
+      }
+
+      const decks = ["A", "B"];
+
+      for (let i = 0; i < decks.length; i++) {
+        const deck = decks[i];
+        const enabled = deck === "A" ? this.autoTriggerA : this.autoTriggerB;
+
+        if (!enabled) {
+          continue;
+        }
+
+        const deckSlots = this.decks[deck];
+        const loaded = [];
+
+        for (let row = 0; row < deckSlots.length; row++) {
+          for (let col = 0; col < deckSlots[row].length; col++) {
+            const slot = deckSlots[row][col];
+
+            if (slot.source && slot.source.url) {
+              loaded.push({ row, col });
+            }
+          }
+        }
+
+        if (loaded.length === 0) {
+          continue;
+        }
+
+        const pick = loaded[Math.floor(Math.random() * loaded.length)];
+        clipLauncher.triggerClip(deck, pick.row, pick.col);
       }
     },
 
@@ -2049,6 +2146,83 @@ export default {
   border-color: var(--grackle-accent, #00ff88);
   color: var(--grackle-accent, #00ff88);
   background: rgba(0, 255, 136, 0.08);
+}
+
+/* Auto-trigger deck button */
+.deck-auto-btn {
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.deck-auto-btn:hover {
+  border-color: rgba(255, 200, 60, 0.5);
+  color: rgba(255, 220, 80, 0.9);
+}
+
+.deck-auto-active {
+  border-color: #ffd740;
+  color: #ffd740;
+  background: rgba(255, 215, 64, 0.1);
+  box-shadow: 0 0 12px rgba(255, 200, 64, 0.2);
+  animation: auto-pulse 800ms ease-in-out infinite;
+}
+
+@keyframes auto-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(255, 200, 64, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(255, 200, 64, 0.4);
+  }
+}
+
+/* Auto-trigger beat division row */
+.auto-div-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.auto-div-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: rgba(255, 215, 64, 0.7);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.auto-div-btn {
+  flex: 1;
+  padding: 3px 4px;
+  border: 1px solid rgba(255, 215, 64, 0.2);
+  background: rgba(255, 215, 64, 0.04);
+  color: rgba(255, 215, 64, 0.5);
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.auto-div-btn:hover {
+  border-color: rgba(255, 215, 64, 0.5);
+  color: rgba(255, 215, 64, 0.85);
+}
+
+.auto-div-active {
+  border-color: #ffd740;
+  color: #ffd740;
+  background: rgba(255, 215, 64, 0.12);
 }
 
 /* Solo deck buttons */
