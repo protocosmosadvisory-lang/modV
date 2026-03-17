@@ -107,6 +107,10 @@ class DeckMixer {
     this._posYB = 0;
     this._scaleB = 1;
 
+    // Per-deck chromatic aberration (pixel offset, 0 = off)
+    this._chromaA = 0;
+    this._chromaB = 0;
+
     // Strobe effect
     this.strobeEnabled = false;
     this.strobeHz = 8; // flashes per second
@@ -188,6 +192,28 @@ class DeckMixer {
       this.tileModeA = safeMode;
     } else {
       this.tileModeB = safeMode;
+    }
+  }
+
+  setChroma(deck, offset) {
+    const v = Math.max(0, Math.min(40, Number(offset) || 0));
+
+    if (deck === "A") {
+      this._chromaA = v;
+    } else {
+      this._chromaB = v;
+    }
+  }
+
+  getChroma(deck) {
+    return deck === "A" ? this._chromaA : this._chromaB;
+  }
+
+  setReversed(deck, val) {
+    if (deck === "A") {
+      this.playerA.setReversed(val);
+    } else {
+      this.playerB.setReversed(val);
     }
   }
 
@@ -331,7 +357,7 @@ class DeckMixer {
   }
 
   /**
-   * Draw a deck's canvas onto ctx with mirror/tile applied.
+   * Draw a deck's canvas onto ctx with mirror/tile/chroma applied.
    * Assumes ctx.globalAlpha, ctx.filter, ctx.globalCompositeOperation
    * are already set by the caller.
    */
@@ -348,7 +374,8 @@ class DeckMixer {
     h,
     posX,
     posY,
-    deckScale
+    deckScale,
+    chroma
   ) {
     // Apply per-deck position and scale around the canvas center
     const hasTransform =
@@ -427,6 +454,26 @@ class DeckMixer {
     }
 
     if (hasTransform) {
+      ctx.restore();
+    }
+
+    // Chromatic aberration: two offset layers (red left, cyan right) via screen blend
+    if (chroma > 0) {
+      const ca = ctx.globalAlpha;
+      const chromaAlpha = ca * 0.55;
+      // Red fringe — shift left
+      ctx.save();
+      ctx.globalAlpha = chromaAlpha;
+      ctx.globalCompositeOperation = "screen";
+      ctx.filter = "hue-rotate(0deg) saturate(5) brightness(0.45)";
+      ctx.drawImage(srcCanvas, zx - chroma, zy, zw, zh);
+      ctx.restore();
+      // Cyan fringe — shift right
+      ctx.save();
+      ctx.globalAlpha = chromaAlpha;
+      ctx.globalCompositeOperation = "screen";
+      ctx.filter = "hue-rotate(180deg) saturate(5) brightness(0.45)";
+      ctx.drawImage(srcCanvas, zx + chroma, zy, zw, zh);
       ctx.restore();
     }
   }
@@ -600,7 +647,8 @@ class DeckMixer {
         h,
         this._posXA,
         this._posYA,
-        this._scaleA
+        this._scaleA,
+        this._chromaA
       );
     }
 
@@ -627,7 +675,8 @@ class DeckMixer {
         h,
         this._posXB,
         this._posYB,
-        this._scaleB
+        this._scaleB,
+        this._chromaB
       );
     }
 

@@ -215,6 +215,24 @@
         </button>
         <button
           type="button"
+          class="deck-rev-btn"
+          :class="{ 'deck-rev-active': reversedA }"
+          title="Reverse playback"
+          @click="toggleReverse('A')"
+        >
+          ◀◀
+        </button>
+        <button
+          type="button"
+          class="deck-qbeat-btn"
+          :class="{ 'deck-qbeat-active': quantizeA }"
+          title="Quantize launch to next beat"
+          @click="quantizeA = !quantizeA"
+        >
+          Q
+        </button>
+        <button
+          type="button"
           class="deck-auto-btn"
           :class="{ 'deck-auto-active': autoTriggerA }"
           title="Auto-trigger random clips on beat"
@@ -322,7 +340,30 @@
           :value="fxA.sepia"
           @input="updateFx('A', 'sepia', $event.target.value)"
         />
+        <label class="fx-label">RGB</label>
+        <input
+          type="range"
+          class="fx-slider fx-slider-chroma"
+          min="0"
+          max="30"
+          step="0.5"
+          :value="chromaA"
+          @input="setChroma('A', $event.target.value)"
+          title="Chromatic aberration — RGB split offset"
+        />
         <button class="fx-reset-btn" @click="resetFx('A')">↺</button>
+      </div>
+      <div v-if="showFxA" class="deck-grade-row">
+        <button
+          v-for="grade in colorGrades"
+          :key="grade.id"
+          type="button"
+          class="grade-btn"
+          :title="grade.label"
+          @click="applyGrade('A', grade)"
+        >
+          {{ grade.label }}
+        </button>
       </div>
       <div v-if="showFxA" class="deck-transform-row">
         <label class="fx-label">X</label>
@@ -924,6 +965,24 @@
         </button>
         <button
           type="button"
+          class="deck-rev-btn"
+          :class="{ 'deck-rev-active': reversedB }"
+          title="Reverse playback"
+          @click="toggleReverse('B')"
+        >
+          ◀◀
+        </button>
+        <button
+          type="button"
+          class="deck-qbeat-btn"
+          :class="{ 'deck-qbeat-active': quantizeB }"
+          title="Quantize launch to next beat"
+          @click="quantizeB = !quantizeB"
+        >
+          Q
+        </button>
+        <button
+          type="button"
           class="deck-auto-btn"
           :class="{ 'deck-auto-active': autoTriggerB }"
           title="Auto-trigger random clips on beat"
@@ -1031,7 +1090,30 @@
           :value="fxB.sepia"
           @input="updateFx('B', 'sepia', $event.target.value)"
         />
+        <label class="fx-label">RGB</label>
+        <input
+          type="range"
+          class="fx-slider fx-slider-chroma"
+          min="0"
+          max="30"
+          step="0.5"
+          :value="chromaB"
+          @input="setChroma('B', $event.target.value)"
+          title="Chromatic aberration — RGB split offset"
+        />
         <button class="fx-reset-btn" @click="resetFx('B')">↺</button>
+      </div>
+      <div v-if="showFxB" class="deck-grade-row">
+        <button
+          v-for="grade in colorGrades"
+          :key="grade.id"
+          type="button"
+          class="grade-btn"
+          :title="grade.label"
+          @click="applyGrade('B', grade)"
+        >
+          {{ grade.label }}
+        </button>
       </div>
       <div v-if="showFxB" class="deck-transform-row">
         <label class="fx-label">X</label>
@@ -1248,6 +1330,12 @@ export default {
       trailDecay: 0.85,
       rampingDeck: null,
       rampDir: 0,
+      reversedA: false,
+      reversedB: false,
+      quantizeA: false,
+      quantizeB: false,
+      chromaA: 0,
+      chromaB: 0,
       strobeEnabled: false,
       strobeHz: 8,
       masterContrast: 1.0,
@@ -1298,6 +1386,78 @@ export default {
         { label: "2×", value: 2.0 },
         { label: "4×", value: 4.0 },
       ],
+      colorGrades: [
+        {
+          id: "neon",
+          label: "NEON",
+          fx: {
+            brightness: 1.1,
+            contrast: 1.3,
+            saturation: 2.5,
+            hue: 0,
+            blur: 0,
+            grayscale: 0,
+            invert: 0,
+            sepia: 0,
+          },
+        },
+        {
+          id: "noir",
+          label: "NOIR",
+          fx: {
+            brightness: 0.9,
+            contrast: 1.5,
+            saturation: 0.1,
+            hue: 0,
+            blur: 0,
+            grayscale: 0.8,
+            invert: 0,
+            sepia: 0.15,
+          },
+        },
+        {
+          id: "warm",
+          label: "WARM",
+          fx: {
+            brightness: 1.05,
+            contrast: 1.1,
+            saturation: 1.4,
+            hue: 20,
+            blur: 0,
+            grayscale: 0,
+            invert: 0,
+            sepia: 0,
+          },
+        },
+        {
+          id: "cold",
+          label: "COLD",
+          fx: {
+            brightness: 0.95,
+            contrast: 1.1,
+            saturation: 0.85,
+            hue: -20,
+            blur: 0,
+            grayscale: 0,
+            invert: 0,
+            sepia: 0,
+          },
+        },
+        {
+          id: "vibe",
+          label: "VIBE",
+          fx: {
+            brightness: 1.0,
+            contrast: 1.2,
+            saturation: 3.0,
+            hue: 90,
+            blur: 0,
+            grayscale: 0,
+            invert: 0.05,
+            sepia: 0,
+          },
+        },
+      ],
     };
   },
 
@@ -1323,6 +1483,8 @@ export default {
     this._autoCfRaf = null;
     this._recordInterval = null;
     this._rampInterval = null;
+    this._quantizePendingA = null;
+    this._quantizePendingB = null;
     this._beatUnsubscribe = BeatSync.on("beat", () => this.onAutoTriggerBeat());
     this.lastKickState = Boolean(this.$modV?.store?.state?.beats?.kick);
     this.beatPollInterval = setInterval(this.pollBeatState, 1000 / 60);
@@ -1622,6 +1784,19 @@ export default {
       }
 
       const { row, col } = parseSlotId(slot.id);
+
+      // Beat-quantized launch: queue for next beat instead of firing now
+      const quantized = deck === "A" ? this.quantizeA : this.quantizeB;
+
+      if (quantized) {
+        if (deck === "A") {
+          this._quantizePendingA = { row, col };
+        } else {
+          this._quantizePendingB = { row, col };
+        }
+        return;
+      }
+
       clipLauncher.triggerClip(deck, row, col);
     },
 
@@ -1849,6 +2024,24 @@ export default {
       this.trailEnabled = false;
       deckMixer.setTrail(false);
 
+      // Reset reverse
+      this.reversedA = false;
+      this.reversedB = false;
+      deckMixer.setReversed("A", false);
+      deckMixer.setReversed("B", false);
+
+      // Clear quantize pending
+      this.quantizeA = false;
+      this.quantizeB = false;
+      this._quantizePendingA = null;
+      this._quantizePendingB = null;
+
+      // Reset chroma
+      this.chromaA = 0;
+      this.chromaB = 0;
+      deckMixer.setChroma("A", 0);
+      deckMixer.setChroma("B", 0);
+
       // Reset strobe
       this.strobeEnabled = false;
       deckMixer.setStrobe(false);
@@ -2048,6 +2241,19 @@ export default {
     },
 
     onAutoTriggerBeat() {
+      // Fire any beat-quantized pending clips first
+      if (this._quantizePendingA) {
+        const p = this._quantizePendingA;
+        this._quantizePendingA = null;
+        clipLauncher.triggerClip("A", p.row, p.col);
+      }
+
+      if (this._quantizePendingB) {
+        const p = this._quantizePendingB;
+        this._quantizePendingB = null;
+        clipLauncher.triggerClip("B", p.row, p.col);
+      }
+
       this._autoTriggerBeatCount = (this._autoTriggerBeatCount || 0) + 1;
 
       if (this._autoTriggerBeatCount % this.autoTriggerDivision !== 0) {
@@ -2601,6 +2807,52 @@ export default {
     setTrailDecay(value) {
       this.trailDecay = parseFloat(value);
       deckMixer.setTrail(this.trailEnabled, this.trailDecay);
+    },
+
+    setChroma(deck, value) {
+      const v = parseFloat(value);
+
+      if (deck === "A") {
+        this.chromaA = v;
+      } else {
+        this.chromaB = v;
+      }
+
+      deckMixer.setChroma(deck, v);
+    },
+
+    toggleReverse(deck) {
+      if (deck === "A") {
+        this.reversedA = !this.reversedA;
+        deckMixer.setReversed("A", this.reversedA);
+      } else {
+        this.reversedB = !this.reversedB;
+        deckMixer.setReversed("B", this.reversedB);
+      }
+    },
+
+    applyGrade(deck, grade) {
+      const fxKey = deck === "A" ? "fxA" : "fxB";
+      const fields = [
+        "brightness",
+        "contrast",
+        "saturation",
+        "hue",
+        "blur",
+        "grayscale",
+        "invert",
+        "sepia",
+      ];
+
+      for (let i = 0; i < fields.length; i++) {
+        const f = fields[i];
+
+        if (grade.fx[f] !== undefined) {
+          this[fxKey][f] = grade.fx[f];
+        }
+      }
+
+      deckMixer.setFx(deck, this[fxKey]);
     },
 
     toggleStrobe() {
@@ -3388,6 +3640,90 @@ export default {
   background: rgba(100, 180, 255, 0.15);
   border-color: #64b4ff;
   color: #9dd0ff;
+}
+
+/* Reverse button */
+.deck-rev-btn {
+  padding: 2px 5px;
+  border: 1px solid rgba(255, 120, 60, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 120, 60, 0.55);
+  border-radius: 4px;
+  font-size: 0.56rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.deck-rev-btn:hover {
+  border-color: rgba(255, 120, 60, 0.7);
+  color: rgba(255, 150, 80, 0.95);
+}
+
+.deck-rev-active {
+  background: rgba(255, 80, 30, 0.18);
+  border-color: #ff7830;
+  color: #ffaa70;
+}
+
+/* QBEAT button */
+.deck-qbeat-btn {
+  padding: 2px 5px;
+  border: 1px solid rgba(80, 220, 100, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(80, 220, 100, 0.5);
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.deck-qbeat-btn:hover {
+  border-color: rgba(80, 220, 100, 0.6);
+  color: rgba(100, 240, 120, 0.9);
+}
+
+.deck-qbeat-active {
+  background: rgba(60, 200, 80, 0.15);
+  border-color: #3cc850;
+  color: #70e880;
+}
+
+/* Chroma slider accent */
+.fx-slider-chroma {
+  accent-color: #ff4488;
+}
+
+/* Color grade preset row */
+.deck-grade-row {
+  display: flex;
+  gap: 4px;
+  padding: 3px 0;
+}
+
+.grade-btn {
+  flex: 1;
+  padding: 3px 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.45);
+  border-radius: 4px;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.grade-btn:hover {
+  border-color: rgba(255, 180, 80, 0.6);
+  color: rgba(255, 200, 100, 0.9);
+  background: rgba(255, 180, 60, 0.08);
+}
+
+.grade-btn:active {
+  transform: scale(0.94);
 }
 
 /* Deck FX controls */

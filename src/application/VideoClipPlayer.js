@@ -22,6 +22,7 @@ export class VideoClipPlayer {
     this.loopMode = "loop";
     this.speed = 1.0;
     this._active = false;
+    this._reversed = false;
   }
 
   get currentTime() {
@@ -111,6 +112,12 @@ export class VideoClipPlayer {
       }
 
       if (video.readyState >= 2) {
+        if (this._reversed && isFinite(video.duration) && video.duration > 0) {
+          const step = Math.max(0.016, this.speed / 30);
+          const next = video.currentTime - step;
+          video.currentTime = next <= 0 ? video.duration : next;
+        }
+
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       }
 
@@ -120,8 +127,17 @@ export class VideoClipPlayer {
     drawFrame();
   }
 
+  get isReversed() {
+    return this._reversed;
+  }
+
   get isFrozen() {
-    return this._active && this._video !== null && this._video.paused;
+    return (
+      this._active &&
+      this._video !== null &&
+      this._video.paused &&
+      !this._reversed
+    );
   }
 
   freeze() {
@@ -131,8 +147,20 @@ export class VideoClipPlayer {
   }
 
   unfreeze() {
-    if (this._video && this._video.paused && this._active) {
+    if (this._video && this._video.paused && this._active && !this._reversed) {
       this._video.play().catch(() => {});
+    }
+  }
+
+  setReversed(val) {
+    this._reversed = Boolean(val);
+
+    if (this._video) {
+      if (this._reversed) {
+        this._video.pause();
+      } else if (this._active) {
+        this._video.play().catch(() => {});
+      }
     }
   }
 
@@ -226,6 +254,7 @@ export class VideoClipPlayer {
 
   stop() {
     this._active = false;
+    this._reversed = false;
 
     if (this._raf) {
       cancelAnimationFrame(this._raf);
