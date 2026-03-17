@@ -149,6 +149,15 @@
         </button>
         <button
           type="button"
+          class="deck-mirror-btn"
+          :class="{ 'deck-mirror-active': mirrorA }"
+          title="Flip Deck A horizontally"
+          @click="toggleMirror('A')"
+        >
+          ↔
+        </button>
+        <button
+          type="button"
           class="deck-stutter-btn"
           :class="{ 'deck-stutter-active': stutteringDeck === 'A' }"
           title="Stutter — hold to loop current frame rapidly"
@@ -511,6 +520,29 @@
         >
           ZOOM
         </button>
+        <button
+          class="sync-toggle beat-trail-toggle"
+          :class="{ 'sync-toggle-active': trailEnabled }"
+          type="button"
+          title="Motion trail / echo feedback"
+          @click="toggleTrail"
+        >
+          TRAIL
+        </button>
+      </div>
+      <div v-if="trailEnabled" class="trail-decay-row">
+        <span class="trail-decay-label"
+          >DECAY {{ Math.round(trailDecay * 100) }}%</span
+        >
+        <input
+          type="range"
+          class="trail-decay-slider"
+          min="0"
+          max="0.99"
+          step="0.01"
+          :value="trailDecay"
+          @input="setTrailDecay($event.target.value)"
+        />
       </div>
 
       <!-- PANIC: stop everything, reset all effects -->
@@ -594,6 +626,15 @@
           @click="toggleCam('B')"
         >
           CAM
+        </button>
+        <button
+          type="button"
+          class="deck-mirror-btn"
+          :class="{ 'deck-mirror-active': mirrorB }"
+          title="Flip Deck B horizontally"
+          @click="toggleMirror('B')"
+        >
+          ↔
         </button>
         <button
           type="button"
@@ -883,6 +924,10 @@ export default {
       whiteoutOn: false,
       camA: false,
       camB: false,
+      mirrorA: false,
+      mirrorB: false,
+      trailEnabled: false,
+      trailDecay: 0.85,
       showFxA: false,
       showFxB: false,
       fxA: {
@@ -1416,6 +1461,16 @@ export default {
       this.blendMode = "cross";
       deckMixer.setBlendMode("cross");
 
+      // Reset mirror
+      this.mirrorA = false;
+      this.mirrorB = false;
+      deckMixer.setMirror("A", false);
+      deckMixer.setMirror("B", false);
+
+      // Reset trail
+      this.trailEnabled = false;
+      deckMixer.setTrail(false);
+
       // Stop LFO
       this.stopLfo();
     },
@@ -1842,6 +1897,26 @@ export default {
           this.pendingMidiSlot = null;
         }
       }
+    },
+
+    toggleMirror(deck) {
+      if (deck === "A") {
+        this.mirrorA = !this.mirrorA;
+        deckMixer.setMirror("A", this.mirrorA);
+      } else {
+        this.mirrorB = !this.mirrorB;
+        deckMixer.setMirror("B", this.mirrorB);
+      }
+    },
+
+    toggleTrail() {
+      this.trailEnabled = !this.trailEnabled;
+      deckMixer.setTrail(this.trailEnabled, this.trailDecay);
+    },
+
+    setTrailDecay(value) {
+      this.trailDecay = parseFloat(value);
+      deckMixer.setTrail(this.trailEnabled, this.trailDecay);
     },
 
     async toggleCam(deck) {
@@ -2743,6 +2818,53 @@ export default {
   50% {
     box-shadow: 0 0 18px rgba(255, 200, 64, 0.4);
   }
+}
+
+/* Mirror button */
+.deck-mirror-btn {
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.deck-mirror-btn:hover {
+  border-color: rgba(180, 120, 255, 0.5);
+  color: rgba(200, 150, 255, 0.8);
+}
+
+.deck-mirror-active {
+  border-color: #c084ff;
+  color: #c084ff;
+  background: rgba(180, 100, 255, 0.12);
+  box-shadow: 0 0 10px rgba(180, 100, 255, 0.2);
+}
+
+/* Trail decay row */
+.trail-decay-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trail-decay-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  min-width: 52px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.trail-decay-slider {
+  flex: 1;
+  height: 3px;
+  accent-color: rgba(255, 255, 255, 0.6);
 }
 
 /* Webcam button */

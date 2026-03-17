@@ -74,6 +74,14 @@ class DeckMixer {
     this._masterWhite = 0;
     this._targetMasterWhite = 0;
     this.whiteout = false;
+
+    // Trail / echo feedback
+    this.trailEnabled = false;
+    this.trailDecay = 0.85; // 0 = no trail, 1 = infinite persistence
+
+    // Per-deck mirror (horizontal flip)
+    this.mirrorA = false;
+    this.mirrorB = false;
   }
 
   setBlackout(active) {
@@ -84,6 +92,22 @@ class DeckMixer {
   setWhiteout(active) {
     this.whiteout = active;
     this._targetMasterWhite = active ? 1 : 0;
+  }
+
+  setMirror(deck, enabled) {
+    if (deck === "A") {
+      this.mirrorA = Boolean(enabled);
+    } else {
+      this.mirrorB = Boolean(enabled);
+    }
+  }
+
+  setTrail(enabled, decay) {
+    this.trailEnabled = Boolean(enabled);
+
+    if (decay !== undefined) {
+      this.trailDecay = Math.max(0, Math.min(0.99, Number(decay) || 0.85));
+    }
   }
 
   setMasterOpacity(value) {
@@ -266,7 +290,16 @@ class DeckMixer {
     const h = this._canvas.height;
     const mode = this.blendMode;
 
-    ctx.clearRect(0, 0, w, h);
+    // Trail feedback: keep previous frame ghosted rather than clearing
+    if (this.trailEnabled) {
+      ctx.globalAlpha = 1 - this.trailDecay;
+      ctx.filter = "none";
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, w, h);
+    } else {
+      ctx.clearRect(0, 0, w, h);
+    }
 
     // Beat-reactive flash + zoom: detect rising edge on beats.kick
     const kick = Boolean(window.modV?.store?.state?.beats?.kick);
@@ -334,7 +367,16 @@ class DeckMixer {
       ctx.globalAlpha = alphaA;
       ctx.filter = filterA;
       ctx.globalCompositeOperation = "source-over";
-      ctx.drawImage(this.playerA.canvas, zx, zy, zw, zh);
+
+      if (this.mirrorA) {
+        ctx.save();
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(this.playerA.canvas, zx, zy, zw, zh);
+        ctx.restore();
+      } else {
+        ctx.drawImage(this.playerA.canvas, zx, zy, zw, zh);
+      }
     }
 
     if (this.playerB.canvas && this.playerB.isPlaying && alphaB > 0.001) {
@@ -342,7 +384,16 @@ class DeckMixer {
       ctx.filter = filterB;
       ctx.globalCompositeOperation =
         mode === "cross" ? "source-over" : compositeOp;
-      ctx.drawImage(this.playerB.canvas, zx, zy, zw, zh);
+
+      if (this.mirrorB) {
+        ctx.save();
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(this.playerB.canvas, zx, zy, zw, zh);
+        ctx.restore();
+      } else {
+        ctx.drawImage(this.playerB.canvas, zx, zy, zw, zh);
+      }
     }
 
     // Animate master opacity toward target (smooth blackout/fadein)
