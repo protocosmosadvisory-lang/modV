@@ -239,6 +239,36 @@
           :value="fxA.blur"
           @input="updateFx('A', 'blur', $event.target.value)"
         />
+        <label class="fx-label">G</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="fxA.grayscale"
+          @input="updateFx('A', 'grayscale', $event.target.value)"
+        />
+        <label class="fx-label">INV</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="fxA.invert"
+          @input="updateFx('A', 'invert', $event.target.value)"
+        />
+        <label class="fx-label">SEP</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="fxA.sepia"
+          @input="updateFx('A', 'sepia', $event.target.value)"
+        />
         <button class="fx-reset-btn" @click="resetFx('A')">↺</button>
       </div>
       <div class="deck-grid">
@@ -648,6 +678,36 @@
           :value="fxB.blur"
           @input="updateFx('B', 'blur', $event.target.value)"
         />
+        <label class="fx-label">G</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="fxB.grayscale"
+          @input="updateFx('B', 'grayscale', $event.target.value)"
+        />
+        <label class="fx-label">INV</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="fxB.invert"
+          @input="updateFx('B', 'invert', $event.target.value)"
+        />
+        <label class="fx-label">SEP</label>
+        <input
+          type="range"
+          class="fx-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          :value="fxB.sepia"
+          @input="updateFx('B', 'sepia', $event.target.value)"
+        />
         <button class="fx-reset-btn" @click="resetFx('B')">↺</button>
       </div>
       <div class="deck-grid">
@@ -805,8 +865,26 @@ export default {
       whiteoutOn: false,
       showFxA: false,
       showFxB: false,
-      fxA: { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0, blur: 0 },
-      fxB: { brightness: 1.0, contrast: 1.0, saturation: 1.0, hue: 0, blur: 0 },
+      fxA: {
+        brightness: 1.0,
+        contrast: 1.0,
+        saturation: 1.0,
+        hue: 0,
+        blur: 0,
+        grayscale: 0,
+        invert: 0,
+        sepia: 0,
+      },
+      fxB: {
+        brightness: 1.0,
+        contrast: 1.0,
+        saturation: 1.0,
+        hue: 0,
+        blur: 0,
+        grayscale: 0,
+        invert: 0,
+        sepia: 0,
+      },
       blendModes: [
         { label: "×fade", value: "cross" },
         { label: "add", value: "add" },
@@ -1336,6 +1414,9 @@ export default {
         saturation: 1.0,
         hue: 0,
         blur: 0,
+        grayscale: 0,
+        invert: 0,
+        sepia: 0,
       };
 
       if (deck === "A") {

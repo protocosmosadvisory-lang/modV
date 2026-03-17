@@ -32,6 +32,9 @@ class DeckMixer {
       saturation: 1.0,
       hue: 0,
       blur: 0,
+      grayscale: 0,
+      invert: 0,
+      sepia: 0,
     };
     this._fxB = {
       brightness: 1.0,
@@ -39,6 +42,9 @@ class DeckMixer {
       saturation: 1.0,
       hue: 0,
       blur: 0,
+      grayscale: 0,
+      invert: 0,
+      sepia: 0,
     };
     this._masterBrightness = 1.0;
     this._canvas = null;
@@ -106,6 +112,21 @@ class DeckMixer {
     if (params.blur !== undefined) {
       target.blur = Math.max(0, Math.min(20, Number(params.blur) || 0));
     }
+
+    if (params.grayscale !== undefined) {
+      target.grayscale = Math.max(
+        0,
+        Math.min(1, Number(params.grayscale) || 0)
+      );
+    }
+
+    if (params.invert !== undefined) {
+      target.invert = Math.max(0, Math.min(1, Number(params.invert) || 0));
+    }
+
+    if (params.sepia !== undefined) {
+      target.sepia = Math.max(0, Math.min(1, Number(params.sepia) || 0));
+    }
   }
 
   setMasterBrightness(value) {
@@ -137,6 +158,18 @@ class DeckMixer {
 
     if (fx.blur > 0) {
       parts.push(`blur(${fx.blur.toFixed(1)}px)`);
+    }
+
+    if (fx.grayscale > 0) {
+      parts.push(`grayscale(${fx.grayscale.toFixed(2)})`);
+    }
+
+    if (fx.invert > 0) {
+      parts.push(`invert(${fx.invert.toFixed(2)})`);
+    }
+
+    if (fx.sepia > 0) {
+      parts.push(`sepia(${fx.sepia.toFixed(2)})`);
     }
 
     return parts.length > 0 ? parts.join(" ") : "none";
