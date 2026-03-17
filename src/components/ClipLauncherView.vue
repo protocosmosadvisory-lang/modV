@@ -824,6 +824,36 @@
         !! PANIC !!
       </button>
 
+      <!-- Session save / load -->
+      <div class="session-row">
+        <button
+          type="button"
+          class="session-btn"
+          title="Save session to JSON file"
+          @click="saveSession"
+        >
+          SAVE
+        </button>
+        <button
+          type="button"
+          class="session-btn"
+          title="Load session from JSON file"
+          @click="$refs.sessionFileInput.click()"
+        >
+          LOAD
+        </button>
+        <input
+          ref="sessionFileInput"
+          type="file"
+          accept=".json"
+          style="display: none"
+          @change="
+            loadSession($event.target.files[0]);
+            $event.target.value = '';
+          "
+        />
+      </div>
+
       <!-- Scene presets: hold to save, tap to recall -->
       <div class="scene-presets">
         <span class="scene-presets-label">SCENE</span>
@@ -3077,6 +3107,297 @@ export default {
       }
     },
 
+    saveSession() {
+      const state = this.$store.state["clip-launcher"];
+      const slots = {};
+      const decks = ["A", "B"];
+      for (let d = 0; d < decks.length; d++) {
+        const deck = decks[d];
+        slots[deck] = [];
+        const deckSlots = state.decks[deck];
+        for (let row = 0; row < deckSlots.length; row++) {
+          const rowOut = [];
+          for (let col = 0; col < deckSlots[row].length; col++) {
+            const slot = deckSlots[row][col];
+            if (slot.source && slot.source.path) {
+              rowOut.push({
+                row,
+                col,
+                source: {
+                  name: slot.source.name,
+                  path: slot.source.path,
+                  duration: slot.source.duration || 0,
+                },
+                loopMode: slot.loopMode,
+                speed: slot.speed,
+                bpmSyncBeats: slot.bpmSyncBeats || 0,
+              });
+            }
+          }
+          for (let i = 0; i < rowOut.length; i++) {
+            slots[deck].push(rowOut[i]);
+          }
+        }
+      }
+      const session = {
+        version: 1,
+        slots,
+        crossfader: state.crossfader,
+        blendMode: this.blendMode,
+        fxA: Object.assign({}, this.fxA),
+        fxB: Object.assign({}, this.fxB),
+        chromaA: this.chromaA,
+        chromaB: this.chromaB,
+        opacityA: this.opacityA,
+        opacityB: this.opacityB,
+        mirrorA: this.mirrorA,
+        mirrorB: this.mirrorB,
+        tileModeA: this.tileModeA,
+        tileModeB: this.tileModeB,
+        transformA: Object.assign({}, this.transformA),
+        transformB: Object.assign({}, this.transformB),
+        masterBrightness: this.masterBrightness,
+        masterContrast: this.masterContrast,
+        masterSaturation: this.masterSaturation,
+        masterHue: this.masterHue,
+        masterHueSpin: this.masterHueSpin,
+        trailEnabled: this.trailEnabled,
+        trailDecay: this.trailDecay,
+        pixelate: this.pixelate,
+        glitchEnabled: this.glitchEnabled,
+        glitchIntensity: this.glitchIntensity,
+        strobeEnabled: this.strobeEnabled,
+        strobeHz: this.strobeHz,
+        masterSpeedA: this.masterSpeedA,
+        masterSpeedB: this.masterSpeedB,
+        scenePresets: JSON.parse(JSON.stringify(this.scenePresets)),
+      };
+      const blob = new Blob([JSON.stringify(session, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "grackle-session.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+
+    async loadSession(file) {
+      if (!file) {
+        return;
+      }
+      let session;
+      try {
+        const text = await file.text();
+        session = JSON.parse(text);
+      } catch (err) {
+        console.warn("[Grackle] Failed to parse session file:", err);
+        return;
+      }
+
+      // Restore crossfader
+      if (typeof session.crossfader === "number") {
+        clipLauncher.setCrossfader(session.crossfader);
+      }
+
+      // Restore clips
+      const decks = ["A", "B"];
+      for (let d = 0; d < decks.length; d++) {
+        const deck = decks[d];
+        const deckSlots = session.slots && session.slots[deck];
+        if (!deckSlots) {
+          continue;
+        }
+        for (let i = 0; i < deckSlots.length; i++) {
+          const entry = deckSlots[i];
+          if (!entry || !entry.source || !entry.source.path) {
+            continue;
+          }
+          const filePath = entry.source.path;
+          const fileUrl = filePath.startsWith("file://")
+            ? filePath
+            : `file://${filePath}`;
+          const source = {
+            name: entry.source.name || filePath.split(/[\\/]/).pop(),
+            path: filePath,
+            url: fileUrl,
+            duration: entry.source.duration || 0,
+          };
+          try {
+            await clipLauncher.loadClip(deck, entry.row, entry.col, source);
+            if (
+              entry.loopMode ||
+              entry.speed !== undefined ||
+              entry.bpmSyncBeats !== undefined
+            ) {
+              clipLauncher.updateSlotSettings(deck, entry.row, entry.col, {
+                loopMode: entry.loopMode || "loop",
+                speed: entry.speed || 1.0,
+                bpmSyncBeats: entry.bpmSyncBeats || 0,
+              });
+            }
+          } catch (err) {
+            console.warn(
+              "[Grackle] Session load: failed slot",
+              deck,
+              entry.row,
+              entry.col,
+              err
+            );
+          }
+        }
+      }
+
+      // Restore FX
+      const fx = [
+        ["fxA", "A"],
+        ["fxB", "B"],
+      ];
+      for (let i = 0; i < fx.length; i++) {
+        const key = fx[i][0];
+        const deck = fx[i][1];
+        if (session[key]) {
+          const src = session[key];
+          const dest = key === "fxA" ? this.fxA : this.fxB;
+          const fields = [
+            "brightness",
+            "contrast",
+            "saturation",
+            "hue",
+            "blur",
+            "grayscale",
+            "invert",
+            "sepia",
+          ];
+          for (let f = 0; f < fields.length; f++) {
+            if (src[fields[f]] !== undefined) {
+              dest[fields[f]] = src[fields[f]];
+            }
+          }
+          deckMixer.setFx(deck, Object.assign({}, dest));
+        }
+      }
+
+      if (session.blendMode) {
+        this.blendMode = session.blendMode;
+        deckMixer.setBlendMode(session.blendMode);
+      }
+      if (typeof session.chromaA === "number") {
+        this.chromaA = session.chromaA;
+        deckMixer.setChroma("A", session.chromaA);
+      }
+      if (typeof session.chromaB === "number") {
+        this.chromaB = session.chromaB;
+        deckMixer.setChroma("B", session.chromaB);
+      }
+      if (typeof session.opacityA === "number") {
+        this.opacityA = session.opacityA;
+        deckMixer.setOpacity("A", session.opacityA);
+      }
+      if (typeof session.opacityB === "number") {
+        this.opacityB = session.opacityB;
+        deckMixer.setOpacity("B", session.opacityB);
+      }
+      if (session.mirrorA !== undefined) {
+        this.mirrorA = session.mirrorA;
+        deckMixer.setMirror("A", session.mirrorA);
+      }
+      if (session.mirrorB !== undefined) {
+        this.mirrorB = session.mirrorB;
+        deckMixer.setMirror("B", session.mirrorB);
+      }
+      if (session.tileModeA !== undefined) {
+        this.tileModeA = session.tileModeA;
+        deckMixer.setTileMode("A", session.tileModeA);
+      }
+      if (session.tileModeB !== undefined) {
+        this.tileModeB = session.tileModeB;
+        deckMixer.setTileMode("B", session.tileModeB);
+      }
+      if (session.transformA) {
+        this.transformA = Object.assign({}, session.transformA);
+        deckMixer.setTransform("A", this.transformA);
+      }
+      if (session.transformB) {
+        this.transformB = Object.assign({}, session.transformB);
+        deckMixer.setTransform("B", this.transformB);
+      }
+      if (typeof session.masterBrightness === "number") {
+        this.masterBrightness = session.masterBrightness;
+        deckMixer.setMasterBrightness(session.masterBrightness);
+      }
+      if (
+        typeof session.masterContrast === "number" ||
+        typeof session.masterSaturation === "number" ||
+        typeof session.masterHue === "number"
+      ) {
+        if (typeof session.masterContrast === "number") {
+          this.masterContrast = session.masterContrast;
+        }
+        if (typeof session.masterSaturation === "number") {
+          this.masterSaturation = session.masterSaturation;
+        }
+        if (typeof session.masterHue === "number") {
+          this.masterHue = session.masterHue;
+        }
+        deckMixer.setMasterFx({
+          contrast: this.masterContrast,
+          saturation: this.masterSaturation,
+          hue: this.masterHue,
+        });
+      }
+      if (typeof session.masterHueSpin === "number") {
+        this.masterHueSpin = session.masterHueSpin;
+        deckMixer._masterHueSpin = session.masterHueSpin;
+      }
+      if (session.trailEnabled !== undefined) {
+        this.trailEnabled = session.trailEnabled;
+        deckMixer.setTrail(
+          session.trailEnabled,
+          session.trailDecay || this.trailDecay
+        );
+      }
+      if (typeof session.trailDecay === "number") {
+        this.trailDecay = session.trailDecay;
+      }
+      if (typeof session.pixelate === "number") {
+        this.pixelate = session.pixelate;
+        deckMixer.setPixelate(session.pixelate);
+      }
+      if (session.glitchEnabled !== undefined) {
+        this.glitchEnabled = session.glitchEnabled;
+        deckMixer.setGlitch(
+          session.glitchEnabled,
+          session.glitchIntensity || this.glitchIntensity
+        );
+      }
+      if (typeof session.glitchIntensity === "number") {
+        this.glitchIntensity = session.glitchIntensity;
+      }
+      if (session.strobeEnabled !== undefined) {
+        this.strobeEnabled = session.strobeEnabled;
+        deckMixer.setStrobe(
+          session.strobeEnabled,
+          session.strobeHz || this.strobeHz
+        );
+      }
+      if (typeof session.strobeHz === "number") {
+        this.strobeHz = session.strobeHz;
+      }
+      if (typeof session.masterSpeedA === "number") {
+        this.masterSpeedA = session.masterSpeedA;
+        deckMixer.setMasterSpeed("A", session.masterSpeedA);
+      }
+      if (typeof session.masterSpeedB === "number") {
+        this.masterSpeedB = session.masterSpeedB;
+        deckMixer.setMasterSpeed("B", session.masterSpeedB);
+      }
+      if (Array.isArray(session.scenePresets)) {
+        this.scenePresets = session.scenePresets.slice(0, 4);
+      }
+    },
+
     onKeyDown(e) {
       if (e.key !== "Escape") {
         return;
@@ -4126,6 +4447,32 @@ export default {
   50% {
     box-shadow: 0 0 18px rgba(255, 200, 64, 0.4);
   }
+}
+
+/* Session save/load */
+.session-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.session-btn {
+  flex: 1;
+  padding: 4px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: #1a1a2e;
+  border: 1px solid #444;
+  color: #aaa;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.session-btn:hover {
+  background: #252540;
+  color: #fff;
+  border-color: #888;
 }
 
 /* Scene presets */
