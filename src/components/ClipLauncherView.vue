@@ -938,27 +938,29 @@
       </button>
       <div class="scene-presets">
         <span class="scene-presets-label">SCENE</span>
-        <button
-          v-for="(preset, i) in scenePresets"
-          :key="i"
-          type="button"
-          class="scene-preset-btn"
-          :class="{ 'scene-preset-saved': preset !== null }"
-          :title="
-            preset
-              ? `Recall scene ${i + 1} (hold to overwrite)`
-              : `Hold to save scene ${i + 1}`
-          "
-          @mousedown="startPresetLongPress(i)"
-          @mouseup="endPresetPress(i)"
-          @mouseleave="cancelPresetLongPress"
-          @touchstart.prevent="startPresetLongPress(i)"
-          @touchend.prevent="endPresetPress(i)"
-          @touchcancel="cancelPresetLongPress"
-        >
-          {{ i + 1 }}
-          <span v-if="preset !== null" class="scene-preset-dot"></span>
-        </button>
+        <div class="scene-preset-grid">
+          <button
+            v-for="(preset, i) in scenePresets"
+            :key="i"
+            type="button"
+            class="scene-preset-btn"
+            :class="{ 'scene-preset-saved': preset !== null }"
+            :title="
+              preset
+                ? `Recall scene ${i + 1} (hold to overwrite)`
+                : `Hold to save scene ${i + 1}`
+            "
+            @mousedown="startPresetLongPress(i)"
+            @mouseup="endPresetPress(i)"
+            @mouseleave="cancelPresetLongPress"
+            @touchstart.prevent="startPresetLongPress(i)"
+            @touchend.prevent="endPresetPress(i)"
+            @touchcancel="cancelPresetLongPress"
+          >
+            {{ i + 1 }}
+            <span v-if="preset !== null" class="scene-preset-dot"></span>
+          </button>
+        </div>
       </div>
 
       <button
@@ -1454,40 +1456,92 @@
 
           <!-- Step 2: Templates -->
           <div v-if="wizardStep === 2" class="wizard-step">
-            <div class="wizard-title">Start With Scene Templates</div>
+            <div class="wizard-title">16 Scene Templates</div>
             <div class="wizard-body">
               <p>
-                Load 4 preset scenes into your <strong>SCENE</strong> buttons
-                for instant vibe switching. Hold a SCENE button to overwrite it
-                later.
+                Loads 16 presets into your <strong>SCENE</strong> buttons. Tap
+                to recall, hold to overwrite.
               </p>
               <div class="wizard-templates">
                 <div class="wizard-template-row">
-                  <span class="wt-num">1</span>
-                  <span class="wt-name">CLEAN</span>
-                  <span class="wt-desc"
-                    >Neutral crossfade, no effects — good starting point</span
+                  <span class="wt-num">1</span><span class="wt-name">CLEAN</span
+                  ><span class="wt-desc">Neutral crossfade · no effects</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">2</span><span class="wt-name">NEON</span
+                  ><span class="wt-desc">Screen · saturated · beat flash</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">3</span><span class="wt-name">NOIR</span
+                  ><span class="wt-desc">Multiply · grayscale · trail</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">4</span><span class="wt-name">HYPE</span
+                  ><span class="wt-desc">Add · mirror A · flash + zoom</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">5</span><span class="wt-name">DREAM</span
+                  ><span class="wt-desc">Screen · warm · ghost trail</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">6</span><span class="wt-name">VOID</span
+                  ><span class="wt-desc">Darken · crushed · dark trail</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">7</span><span class="wt-name">LUSH</span
+                  ><span class="wt-desc"
+                    >Overlay · super-saturated · trail</span
                   >
                 </div>
                 <div class="wizard-template-row">
-                  <span class="wt-num">2</span>
-                  <span class="wt-name">NEON</span>
-                  <span class="wt-desc"
-                    >Screen blend · saturated · beat flash on</span
+                  <span class="wt-num">8</span><span class="wt-name">ACID</span
+                  ><span class="wt-desc"
+                    >Exclusion · hue-flipped B · flash</span
                   >
                 </div>
                 <div class="wizard-template-row">
-                  <span class="wt-num">3</span>
-                  <span class="wt-name">NOIR</span>
-                  <span class="wt-desc"
-                    >Multiply blend · grayscale · motion trail</span
+                  <span class="wt-num">9</span
+                  ><span class="wt-name">CHROME</span
+                  ><span class="wt-desc">Screen · ice-cold · mirror both</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">10</span
+                  ><span class="wt-name">EMBER</span
+                  ><span class="wt-desc">Multiply · warm sepia · trail</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">11</span
+                  ><span class="wt-name">GLITCH</span
+                  ><span class="wt-desc">Hard-light · inverted B · flash</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">12</span
+                  ><span class="wt-name">SOLAR</span
+                  ><span class="wt-desc">Add · warm A + neon B · zoom</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">13</span
+                  ><span class="wt-name">BLOOM</span
+                  ><span class="wt-desc">Screen · soft blur · long trail</span>
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">14</span><span class="wt-name">RAVE</span
+                  ><span class="wt-desc"
+                    >Add · mirror + tile · all effects</span
                   >
                 </div>
                 <div class="wizard-template-row">
-                  <span class="wt-num">4</span>
-                  <span class="wt-name">HYPE</span>
-                  <span class="wt-desc"
-                    >Add blend · mirror A · beat flash + zoom</span
+                  <span class="wt-num">15</span
+                  ><span class="wt-name">PRISM</span
+                  ><span class="wt-desc"
+                    >Difference · hue-split A/B · trail</span
+                  >
+                </div>
+                <div class="wizard-template-row">
+                  <span class="wt-num">16</span
+                  ><span class="wt-name">GHOST</span
+                  ><span class="wt-desc"
+                    >Screen · transparent B · long trail</span
                   >
                 </div>
               </div>
@@ -1687,7 +1741,7 @@ export default {
         { label: "1080p", w: 1920, h: 1080 },
         { label: "480p", w: 854, h: 480 },
       ],
-      scenePresets: [null, null, null, null],
+      scenePresets: Array(16).fill(null),
       showWizard: false,
       wizardStep: 0,
       templatesLoaded: false,
@@ -1811,11 +1865,11 @@ export default {
   mounted() {
     // Load persisted scene presets
     try {
-      const raw = window.localStorage.getItem("grackle-scene-presets-v1");
+      const raw = window.localStorage.getItem("grackle-scene-presets-v2");
       if (raw) {
         const saved = JSON.parse(raw);
         if (Array.isArray(saved)) {
-          for (let i = 0; i < 4 && i < saved.length; i++) {
+          for (let i = 0; i < 16 && i < saved.length; i++) {
             this.scenePresets[i] = saved[i];
           }
         }
@@ -3075,7 +3129,7 @@ export default {
     _persistPresets() {
       try {
         window.localStorage.setItem(
-          "grackle-scene-presets-v1",
+          "grackle-scene-presets-v2",
           JSON.stringify(this.scenePresets)
         );
       } catch (_e) {
@@ -3084,155 +3138,171 @@ export default {
     },
 
     loadDefaultTemplates() {
-      const clean = {
-        fxA: {
-          brightness: 1.0,
-          contrast: 1.0,
-          saturation: 1.0,
-          hue: 0,
-          blur: 0,
-          grayscale: 0,
-          invert: 0,
-          sepia: 0,
-        },
-        fxB: {
-          brightness: 1.0,
-          contrast: 1.0,
-          saturation: 1.0,
-          hue: 0,
-          blur: 0,
-          grayscale: 0,
-          invert: 0,
-          sepia: 0,
-        },
-        opacityA: 1.0,
-        opacityB: 1.0,
-        crossfader: 0.5,
-        blendMode: "cross",
-        masterBrightness: 1.0,
-        beatFlashEnabled: false,
-        beatZoomEnabled: false,
-        trailEnabled: false,
-        trailDecay: 0.85,
-        mirrorA: false,
-        mirrorB: false,
-        tileModeA: null,
-        tileModeB: null,
+      // Helper: build a compact scene object
+      const s = (
+        blendMode,
+        fxA,
+        fxB,
+        {
+          cf = 0.5,
+          mb = 1.0,
+          flash = false,
+          zoom = false,
+          trail = false,
+          decay = 0.85,
+          mirA = false,
+          mirB = false,
+          tileA = null,
+          tileB = null,
+          opA = 1.0,
+          opB = 1.0,
+        } = {}
+      ) => ({
+        blendMode,
+        fxA,
+        fxB,
+        crossfader: cf,
+        masterBrightness: mb,
+        beatFlashEnabled: flash,
+        beatZoomEnabled: zoom,
+        trailEnabled: trail,
+        trailDecay: decay,
+        mirrorA: mirA,
+        mirrorB: mirB,
+        tileModeA: tileA,
+        tileModeB: tileB,
+        opacityA: opA,
+        opacityB: opB,
         transformA: { posX: 0, posY: 0, scale: 1 },
         transformB: { posX: 0, posY: 0, scale: 1 },
-      };
-      const neon = {
-        fxA: {
-          brightness: 1.1,
-          contrast: 1.3,
-          saturation: 2.5,
-          hue: 0,
-          blur: 0,
-          grayscale: 0,
-          invert: 0,
-          sepia: 0,
-        },
-        fxB: {
-          brightness: 1.0,
-          contrast: 1.2,
-          saturation: 3.0,
-          hue: 90,
-          blur: 0,
-          grayscale: 0,
-          invert: 0.05,
-          sepia: 0,
-        },
-        opacityA: 1.0,
-        opacityB: 1.0,
-        crossfader: 0.5,
-        blendMode: "screen",
-        masterBrightness: 1.0,
-        beatFlashEnabled: true,
-        beatZoomEnabled: false,
-        trailEnabled: false,
-        trailDecay: 0.85,
-        mirrorA: false,
-        mirrorB: false,
-        tileModeA: null,
-        tileModeB: null,
-        transformA: { posX: 0, posY: 0, scale: 1 },
-        transformB: { posX: 0, posY: 0, scale: 1 },
-      };
-      const noir = {
-        fxA: {
-          brightness: 0.9,
-          contrast: 1.5,
-          saturation: 0.1,
-          hue: 0,
-          blur: 0,
-          grayscale: 0.8,
-          invert: 0,
-          sepia: 0.15,
-        },
-        fxB: {
-          brightness: 0.9,
-          contrast: 1.5,
-          saturation: 0.1,
-          hue: 0,
-          blur: 0,
-          grayscale: 0.8,
-          invert: 0,
-          sepia: 0.15,
-        },
-        opacityA: 1.0,
-        opacityB: 1.0,
-        crossfader: 0.5,
-        blendMode: "multiply",
-        masterBrightness: 1.0,
-        beatFlashEnabled: false,
-        beatZoomEnabled: false,
-        trailEnabled: true,
-        trailDecay: 0.85,
-        mirrorA: false,
-        mirrorB: false,
-        tileModeA: null,
-        tileModeB: null,
-        transformA: { posX: 0, posY: 0, scale: 1 },
-        transformB: { posX: 0, posY: 0, scale: 1 },
-      };
-      const hype = {
-        fxA: {
-          brightness: 1.1,
-          contrast: 1.3,
-          saturation: 2.5,
-          hue: 0,
-          blur: 0,
-          grayscale: 0,
-          invert: 0,
-          sepia: 0,
-        },
-        fxB: {
-          brightness: 0.95,
-          contrast: 1.1,
-          saturation: 0.85,
-          hue: -20,
-          blur: 0,
-          grayscale: 0,
-          invert: 0,
-          sepia: 0,
-        },
-        opacityA: 1.0,
-        opacityB: 1.0,
-        crossfader: 0.5,
-        blendMode: "add",
-        masterBrightness: 1.0,
-        beatFlashEnabled: true,
-        beatZoomEnabled: true,
-        trailEnabled: false,
-        trailDecay: 0.85,
-        mirrorA: true,
-        mirrorB: false,
-        tileModeA: null,
-        tileModeB: null,
-        transformA: { posX: 0, posY: 0, scale: 1 },
-        transformB: { posX: 0, posY: 0, scale: 1 },
-      };
-      const templates = [clean, neon, noir, hype];
+      });
+      // fx shorthand: [brightness, contrast, saturation, hue, blur, grayscale, invert, sepia]
+      const fx = ([br, co, sa, hu, bl, gr, inv, sep]) => ({
+        brightness: br,
+        contrast: co,
+        saturation: sa,
+        hue: hu,
+        blur: bl,
+        grayscale: gr,
+        invert: inv,
+        sepia: sep,
+      });
+      const FLAT = fx([1, 1, 1, 0, 0, 0, 0, 0]);
+      const templates = [
+        // 1 CLEAN — neutral starting point
+        s("cross", FLAT, FLAT),
+        // 2 NEON — screen, saturated, beat flash
+        s(
+          "screen",
+          fx([1.1, 1.3, 2.5, 0, 0, 0, 0, 0]),
+          fx([1.0, 1.2, 3.0, 90, 0, 0, 0.05, 0]),
+          { flash: true }
+        ),
+        // 3 NOIR — multiply, grayscale, motion trail
+        s(
+          "multiply",
+          fx([0.9, 1.5, 0.1, 0, 0, 0.8, 0, 0.15]),
+          fx([0.9, 1.5, 0.1, 0, 0, 0.8, 0, 0.15]),
+          { trail: true }
+        ),
+        // 4 HYPE — add, mirror A, beat flash + zoom
+        s(
+          "add",
+          fx([1.1, 1.3, 2.5, 0, 0, 0, 0, 0]),
+          fx([0.95, 1.1, 0.85, -20, 0, 0, 0, 0]),
+          { flash: true, zoom: true, mirA: true }
+        ),
+        // 5 DREAM — screen, warm soft, slow ghost trail
+        s(
+          "screen",
+          fx([1.05, 1.05, 1.4, 20, 1, 0, 0, 0.08]),
+          fx([1.0, 1.0, 1.2, 10, 0, 0, 0, 0.04]),
+          { trail: true, decay: 0.92, opB: 0.8 }
+        ),
+        // 6 VOID — darken, crushed blacks, very low brightness
+        s(
+          "darken",
+          fx([0.7, 1.8, 0.4, 0, 0, 0, 0, 0]),
+          fx([0.7, 1.8, 0.4, 0, 0, 0, 0, 0]),
+          { mb: 0.75, trail: true, decay: 0.9 }
+        ),
+        // 7 LUSH — overlay, super-saturated, trail
+        s(
+          "overlay",
+          fx([1.0, 1.2, 3.0, 90, 0, 0, 0.05, 0]),
+          fx([1.0, 1.1, 2.5, 0, 0, 0, 0, 0]),
+          { trail: true, decay: 0.8 }
+        ),
+        // 8 ACID — exclusion, hue-flipped B, high saturation
+        s(
+          "exclusion",
+          fx([1.0, 1.2, 2.8, 0, 0, 0, 0, 0]),
+          fx([1.0, 1.2, 2.8, 180, 0, 0, 0.1, 0]),
+          { flash: true, zoom: true }
+        ),
+        // 9 CHROME — screen, ice-cold both, mirror both
+        s(
+          "screen",
+          fx([0.95, 1.2, 0.7, -30, 0, 0, 0, 0]),
+          fx([0.95, 1.2, 0.7, -30, 0, 0, 0, 0]),
+          { mirA: true, mirB: true }
+        ),
+        // 10 EMBER — multiply, warm sepia A, trail
+        s(
+          "multiply",
+          fx([1.05, 1.1, 1.5, 25, 0, 0, 0, 0.25]),
+          fx([1.0, 1.0, 1.0, 0, 0, 0, 0, 0]),
+          { trail: true, decay: 0.88 }
+        ),
+        // 11 GLITCH — hard-light, invert B, high contrast
+        s(
+          "hard-light",
+          fx([1.1, 1.6, 1.8, 0, 0, 0, 0, 0]),
+          fx([0.9, 1.4, 1.2, 0, 0, 0, 0.15, 0]),
+          { flash: true }
+        ),
+        // 12 SOLAR — add, warm A + neon B, beat zoom
+        s(
+          "add",
+          fx([1.05, 1.1, 1.4, 20, 0, 0, 0, 0]),
+          fx([1.1, 1.3, 2.5, 0, 0, 0, 0, 0]),
+          { zoom: true }
+        ),
+        // 13 BLOOM — screen, soft blur, long trail
+        s(
+          "screen",
+          fx([1.1, 0.9, 1.3, 0, 2, 0, 0, 0]),
+          fx([1.1, 0.9, 1.3, 0, 2, 0, 0, 0]),
+          { trail: true, decay: 0.94 }
+        ),
+        // 14 RAVE — add, mirror both, tiled A, all effects
+        s(
+          "add",
+          fx([1.2, 1.4, 3.0, 0, 0, 0, 0, 0]),
+          fx([1.0, 1.2, 3.0, 120, 0, 0, 0, 0]),
+          {
+            flash: true,
+            zoom: true,
+            mirA: true,
+            mirB: true,
+            tileA: "2x2",
+          }
+        ),
+        // 15 PRISM — difference, hue-split A/B, saturation cranked
+        s(
+          "difference",
+          fx([1.0, 1.3, 2.0, 60, 0, 0, 0, 0]),
+          fx([1.0, 1.3, 2.0, -60, 0, 0, 0, 0]),
+          { flash: true, trail: true, decay: 0.82 }
+        ),
+        // 16 GHOST — screen, transparent B, very long trail
+        s("screen", FLAT, fx([1.2, 0.9, 0.8, 0, 1, 0, 0, 0]), {
+          trail: true,
+          decay: 0.96,
+          opB: 0.5,
+          mb: 0.95,
+        }),
+      ];
       for (let i = 0; i < templates.length; i++) {
         this.$set(this.scenePresets, i, templates[i]);
       }
@@ -3844,7 +3914,7 @@ export default {
         deckMixer.setMasterSpeed("B", session.masterSpeedB);
       }
       if (Array.isArray(session.scenePresets)) {
-        this.scenePresets = session.scenePresets.slice(0, 4);
+        this.scenePresets = session.scenePresets.slice(0, 16);
       }
     },
 
@@ -4974,8 +5044,8 @@ export default {
 /* Scene presets */
 .scene-presets {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .scene-presets-label {
@@ -4984,13 +5054,17 @@ export default {
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.4);
   white-space: nowrap;
-  min-width: 36px;
+}
+
+.scene-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 3px;
 }
 
 .scene-preset-btn {
-  flex: 1;
   position: relative;
-  padding: 5px 4px;
+  padding: 4px 2px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
   color: rgba(255, 255, 255, 0.3);
@@ -5700,16 +5774,18 @@ export default {
 
 /* templates list */
 .wizard-templates {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 12px 0 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 16px;
+  margin: 10px 0 16px;
+  max-height: 260px;
+  overflow-y: auto;
 }
 .wizard-template-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.78rem;
+  gap: 7px;
+  font-size: 0.73rem;
 }
 .wt-num {
   width: 22px;
