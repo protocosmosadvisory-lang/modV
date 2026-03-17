@@ -443,6 +443,31 @@
           :class="{ 'beat-indicator-active': beatPulseActive }"
         ></span>
       </button>
+      <!-- Auto-crossfade -->
+      <div class="cf-auto-row">
+        <button
+          type="button"
+          class="cf-auto-btn"
+          :class="{ 'cf-auto-active': autoCrossfading }"
+          :title="`Auto-sweep crossfader to ${
+            crossfader < 0.5 ? 'B (100%)' : 'A (0%)'
+          } over ${autoCfDuration}s`"
+          @click="triggerAutoCrossfade"
+        >
+          {{ crossfader &lt; 0.5 ? "A→B" : "B→A" }}
+        </button>
+        <button
+          v-for="d in autoCfDurations"
+          :key="d.value"
+          type="button"
+          class="cf-auto-dur-btn"
+          :class="{ 'cf-auto-dur-active': autoCfDuration === d.value }"
+          @click="autoCfDuration = d.value"
+        >
+          {{ d.label }}
+        </button>
+      </div>
+
       <div class="crossfader-labels">
         <span>A {{ Math.round((1 - crossfader) * 100) }}%</span>
         <button
@@ -1063,6 +1088,14 @@ export default {
       tileModeB: null,
       transformA: { posX: 0, posY: 0, scale: 1 },
       transformB: { posX: 0, posY: 0, scale: 1 },
+      autoCrossfading: false,
+      autoCfDuration: 2,
+      autoCfDurations: [
+        { label: "1s", value: 1 },
+        { label: "2s", value: 2 },
+        { label: "4s", value: 4 },
+        { label: "8s", value: 8 },
+      ],
       trailEnabled: false,
       trailDecay: 0.85,
       scenePresets: [null, null, null, null],
@@ -1124,6 +1157,7 @@ export default {
     this._autoTriggerBeatCount = 0;
     this._presetLongPressTimer = null;
     this._presetLongPressIndex = null;
+    this._autoCfRaf = null;
     this._beatUnsubscribe = BeatSync.on("beat", () => this.onAutoTriggerBeat());
     this.lastKickState = Boolean(this.$modV?.store?.state?.beats?.kick);
     this.beatPollInterval = setInterval(this.pollBeatState, 1000 / 60);
@@ -1171,6 +1205,11 @@ export default {
     this.cancelPresetLongPress();
     this.cancelMidiLearnMode();
     this.stopLfo();
+
+    if (this._autoCfRaf) {
+      cancelAnimationFrame(this._autoCfRaf);
+      this._autoCfRaf = null;
+    }
   },
 
   computed: {
@@ -2214,6 +2253,52 @@ export default {
       this._presetLongPressIndex = null;
     },
 
+    triggerAutoCrossfade() {
+      if (this.autoCrossfading) {
+        // Cancel in-flight sweep
+        if (this._autoCfRaf) {
+          cancelAnimationFrame(this._autoCfRaf);
+          this._autoCfRaf = null;
+        }
+
+        this.autoCrossfading = false;
+        return;
+      }
+
+      const startCf = this.crossfader;
+      const targetCf = startCf <= 0.5 ? 1 : 0;
+      const durationMs = this.autoCfDuration * 1000;
+      const startTime = performance.now();
+
+      this.autoCrossfading = true;
+
+      const step = (now) => {
+        if (!this.autoCrossfading) {
+          return;
+        }
+
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / durationMs);
+        // Smooth ease-in-out
+        const eased =
+          progress < 0.5
+            ? 2 * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+        const cf = startCf + (targetCf - startCf) * eased;
+        clipLauncher.setCrossfader(cf);
+
+        if (progress < 1) {
+          this._autoCfRaf = requestAnimationFrame(step);
+        } else {
+          this.autoCrossfading = false;
+          this._autoCfRaf = null;
+        }
+      };
+
+      this._autoCfRaf = requestAnimationFrame(step);
+    },
+
     updateTransform(deck, param, rawValue) {
       const val = parseFloat(rawValue);
       const t = deck === "A" ? this.transformA : this.transformB;
@@ -3250,6 +3335,66 @@ export default {
   border-radius: 50%;
   background: #5dff93;
   box-shadow: 0 0 4px rgba(93, 255, 147, 0.6);
+}
+
+/* Auto-crossfade row */
+.cf-auto-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cf-auto-btn {
+  flex: 2;
+  padding: 4px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 5px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.cf-auto-btn:hover {
+  border-color: rgba(93, 255, 147, 0.45);
+  color: rgba(93, 255, 147, 0.85);
+}
+
+.cf-auto-active {
+  border-color: #5dff93;
+  color: #5dff93;
+  background: rgba(93, 255, 147, 0.1);
+  box-shadow: 0 0 12px rgba(93, 255, 147, 0.2);
+  animation: auto-pulse 600ms ease-in-out infinite;
+}
+
+.cf-auto-dur-btn {
+  flex: 1;
+  padding: 3px 3px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.cf-auto-dur-btn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.cf-auto-dur-active {
+  border-color: rgba(93, 255, 147, 0.5);
+  color: rgba(93, 255, 147, 0.85);
+  background: rgba(93, 255, 147, 0.08);
 }
 
 /* Deck transform row (X / Y / scale) */
