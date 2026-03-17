@@ -15,7 +15,19 @@ import store from "../ui-store";
 const GALLERY_GROUP_NAME = "modV internal Gallery Group";
 const VIDEO_CLIP_MODULE_NAME = "VideoClip";
 
-const BLEND_MODES = ["cross", "add", "screen", "multiply", "overlay"];
+const BLEND_MODES = [
+  "cross",
+  "add",
+  "screen",
+  "multiply",
+  "overlay",
+  "difference",
+  "exclusion",
+  "hard-light",
+  "soft-light",
+  "darken",
+  "lighten",
+];
 
 class DeckMixer {
   constructor() {
@@ -94,6 +106,24 @@ class DeckMixer {
     this._posXB = 0;
     this._posYB = 0;
     this._scaleB = 1;
+
+    // Strobe effect
+    this.strobeEnabled = false;
+    this.strobeHz = 8; // flashes per second
+
+    // Master output FX (applied after compositing on second canvas)
+    this._masterContrast = 1.0;
+    this._masterSaturation = 1.0;
+    this._masterHue = 0;
+
+    // Second-pass output canvas (master FX applied here)
+    this._outCanvas = null;
+    this._outCtx = null;
+
+    // Video recording
+    this._mediaRecorder = null;
+    this._recordChunks = [];
+    this._recordingStartTime = 0;
   }
 
   setBlackout(active) {
@@ -411,12 +441,20 @@ class DeckMixer {
       return;
     }
 
+    // Compositing canvas (A+B blend, trail, blackout, etc.)
     this._canvas = document.createElement("canvas");
     this._canvas.width = 1280;
     this._canvas.height = 720;
     this._ctx = this._canvas.getContext("2d");
 
-    const stream = this._canvas.captureStream(60);
+    // Final output canvas — master FX (contrast/saturation/hue) applied here
+    this._outCanvas = document.createElement("canvas");
+    this._outCanvas.width = 1280;
+    this._outCanvas.height = 720;
+    this._outCtx = this._outCanvas.getContext("2d");
+
+    // Capture stream from output canvas so master FX are included
+    const stream = this._outCanvas.captureStream(60);
     this._stream = stream;
     const [track] = stream.getVideoTracks();
     this._track = track || null;
@@ -514,7 +552,24 @@ class DeckMixer {
         ? "multiply"
         : mode === "overlay"
         ? "overlay"
+        : mode === "difference"
+        ? "difference"
+        : mode === "exclusion"
+        ? "exclusion"
+        : mode === "hard-light"
+        ? "hard-light"
+        : mode === "soft-light"
+        ? "soft-light"
+        : mode === "darken"
+        ? "darken"
+        : mode === "lighten"
+        ? "lighten"
         : "source-over"; // cross uses source-over
+
+    // Strobe gating: when enabled, blank output on the "off" half of each cycle
+    const strobeOn =
+      !this.strobeEnabled ||
+      Math.floor((performance.now() * this.strobeHz) / 500) % 2 === 0;
 
     // Compute scaled draw region for beat zoom (centered)
     const scale = 1 + zoomDelta;
@@ -523,7 +578,12 @@ class DeckMixer {
     const zw = w * scale;
     const zh = h * scale;
 
-    if (this.playerA.canvas && this.playerA.isPlaying && alphaA > 0.001) {
+    if (
+      strobeOn &&
+      this.playerA.canvas &&
+      this.playerA.isPlaying &&
+      alphaA > 0.001
+    ) {
       ctx.globalAlpha = alphaA;
       ctx.filter = filterA;
       ctx.globalCompositeOperation = "source-over";
@@ -544,7 +604,12 @@ class DeckMixer {
       );
     }
 
-    if (this.playerB.canvas && this.playerB.isPlaying && alphaB > 0.001) {
+    if (
+      strobeOn &&
+      this.playerB.canvas &&
+      this.playerB.isPlaying &&
+      alphaB > 0.001
+    ) {
       ctx.globalAlpha = alphaB;
       ctx.filter = filterB;
       ctx.globalCompositeOperation =
@@ -620,6 +685,18 @@ class DeckMixer {
     ctx.filter = "none";
     ctx.globalCompositeOperation = "source-over";
 
+    // Master output FX pass: composite canvas → output canvas with CSS filter
+    if (this._outCtx) {
+      const outCtx = this._outCtx;
+      const masterFilter = this._buildMasterFilter();
+      outCtx.clearRect(0, 0, w, h);
+      outCtx.globalAlpha = 1;
+      outCtx.globalCompositeOperation = "source-over";
+      outCtx.filter = masterFilter;
+      outCtx.drawImage(this._canvas, 0, 0);
+      outCtx.filter = "none";
+    }
+
     this._raf = requestAnimationFrame(() => this._loop());
   }
 
@@ -629,6 +706,10 @@ class DeckMixer {
     if (this._raf) {
       cancelAnimationFrame(this._raf);
       this._raf = null;
+    }
+
+    if (this._mediaRecorder && this._mediaRecorder.state !== "inactive") {
+      this._mediaRecorder.stop();
     }
 
     this.playerA.stop();
@@ -646,6 +727,8 @@ class DeckMixer {
 
     this._canvas = null;
     this._ctx = null;
+    this._outCanvas = null;
+    this._outCtx = null;
     this._track = null;
 
     if (this.modV) {
@@ -653,9 +736,125 @@ class DeckMixer {
     }
   }
 
-  /** Output canvas — used for preview rendering in the UI. */
+  /** Output canvas (post-master-FX) — used for preview rendering in the UI. */
   get canvas() {
-    return this._canvas;
+    return this._outCanvas || this._canvas;
+  }
+
+  get isRecording() {
+    return (
+      this._mediaRecorder !== null && this._mediaRecorder.state === "recording"
+    );
+  }
+
+  setStrobe(enabled, hz) {
+    this.strobeEnabled = Boolean(enabled);
+
+    if (hz !== undefined) {
+      this.strobeHz = Math.max(0.5, Math.min(60, Number(hz) || 8));
+    }
+  }
+
+  setMasterFx({ contrast, saturation, hue } = {}) {
+    if (contrast !== undefined) {
+      this._masterContrast = Math.max(0, Math.min(4, Number(contrast) || 1));
+    }
+
+    if (saturation !== undefined) {
+      this._masterSaturation = Math.max(
+        0,
+        Math.min(4, Number(saturation) || 1)
+      );
+    }
+
+    if (hue !== undefined) {
+      this._masterHue = Number(hue) % 360;
+    }
+  }
+
+  getMasterFx() {
+    return {
+      contrast: this._masterContrast,
+      saturation: this._masterSaturation,
+      hue: this._masterHue,
+    };
+  }
+
+  _buildMasterFilter() {
+    const parts = [];
+
+    if (this._masterContrast !== 1.0) {
+      parts.push(`contrast(${this._masterContrast.toFixed(2)})`);
+    }
+
+    if (this._masterSaturation !== 1.0) {
+      parts.push(`saturate(${this._masterSaturation.toFixed(2)})`);
+    }
+
+    if (this._masterHue !== 0) {
+      parts.push(`hue-rotate(${Math.round(this._masterHue)}deg)`);
+    }
+
+    return parts.length > 0 ? parts.join(" ") : "none";
+  }
+
+  startRecording() {
+    if (!this._stream || this.isRecording) {
+      return;
+    }
+
+    this._recordChunks = [];
+    this._recordingStartTime = Date.now();
+
+    const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+      ? "video/webm;codecs=vp9"
+      : "video/webm";
+
+    const recorder = new MediaRecorder(this._stream, { mimeType });
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) {
+        this._recordChunks.push(e.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(this._recordChunks, { type: "video/webm" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const now = new Date();
+      const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}${String(now.getDate()).padStart(2, "0")}-${String(
+        now.getHours()
+      ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
+        now.getSeconds()
+      ).padStart(2, "0")}`;
+      a.download = `grackle-${ts}.webm`;
+      a.href = url;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      this._recordChunks = [];
+      this._mediaRecorder = null;
+    };
+
+    recorder.start(100); // collect in 100ms chunks
+    this._mediaRecorder = recorder;
+  }
+
+  stopRecording() {
+    if (this._mediaRecorder && this._mediaRecorder.state === "recording") {
+      this._mediaRecorder.stop();
+    }
+  }
+
+  getRecordingElapsedMs() {
+    if (!this.isRecording) {
+      return 0;
+    }
+
+    return Date.now() - this._recordingStartTime;
   }
 
   /**

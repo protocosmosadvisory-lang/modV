@@ -610,6 +610,27 @@
         >
           TRAIL
         </button>
+        <button
+          class="sync-toggle beat-strobe-toggle"
+          :class="{ 'sync-toggle-active': strobeEnabled }"
+          type="button"
+          title="Strobe — alternating black frames at set Hz"
+          @click="toggleStrobe"
+        >
+          STRB
+        </button>
+      </div>
+      <div v-if="strobeEnabled" class="strobe-hz-row">
+        <span class="strobe-hz-label">{{ strobeHz }} Hz</span>
+        <input
+          type="range"
+          class="strobe-hz-slider"
+          min="0.5"
+          max="30"
+          step="0.5"
+          :value="strobeHz"
+          @input="setStrobeHz($event.target.value)"
+        />
       </div>
       <div v-if="trailEnabled" class="trail-decay-row">
         <span class="trail-decay-label"
@@ -625,6 +646,67 @@
           @input="setTrailDecay($event.target.value)"
         />
       </div>
+
+      <!-- Master output FX -->
+      <div class="master-fx-row">
+        <span class="master-fx-label">OUT</span>
+        <div class="master-fx-sliders">
+          <div class="master-fx-item">
+            <span class="master-fx-item-label">CNT</span>
+            <input
+              type="range"
+              class="master-fx-slider"
+              min="0"
+              max="4"
+              step="0.01"
+              :value="masterContrast"
+              @input="setMasterFxParam('contrast', $event.target.value)"
+              @dblclick.prevent="resetMasterFxParam('contrast')"
+              title="Master contrast (dbl-click reset)"
+            />
+          </div>
+          <div class="master-fx-item">
+            <span class="master-fx-item-label">SAT</span>
+            <input
+              type="range"
+              class="master-fx-slider"
+              min="0"
+              max="4"
+              step="0.01"
+              :value="masterSaturation"
+              @input="setMasterFxParam('saturation', $event.target.value)"
+              @dblclick.prevent="resetMasterFxParam('saturation')"
+              title="Master saturation (dbl-click reset)"
+            />
+          </div>
+          <div class="master-fx-item">
+            <span class="master-fx-item-label">HUE</span>
+            <input
+              type="range"
+              class="master-fx-slider"
+              min="-180"
+              max="180"
+              step="1"
+              :value="masterHue"
+              @input="setMasterFxParam('hue', $event.target.value)"
+              @dblclick.prevent="resetMasterFxParam('hue')"
+              title="Master hue shift (dbl-click reset)"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- REC button -->
+      <button
+        type="button"
+        class="rec-btn"
+        :class="{ 'rec-btn-active': isRecording }"
+        :title="isRecording ? 'Stop recording' : 'Record output as WebM'"
+        @click="toggleRecording"
+      >
+        <span class="rec-dot" />
+        {{ isRecording ? formatRecordElapsed(recordElapsed) : "REC" }}
+      </button>
 
       <!-- PANIC: stop everything, reset all effects -->
       <button
@@ -1098,6 +1180,13 @@ export default {
       ],
       trailEnabled: false,
       trailDecay: 0.85,
+      strobeEnabled: false,
+      strobeHz: 8,
+      masterContrast: 1.0,
+      masterSaturation: 1.0,
+      masterHue: 0,
+      isRecording: false,
+      recordElapsed: 0,
       scenePresets: [null, null, null, null],
       showFxA: false,
       showFxB: false,
@@ -1127,6 +1216,12 @@ export default {
         { label: "scr", value: "screen" },
         { label: "mul", value: "multiply" },
         { label: "ovr", value: "overlay" },
+        { label: "diff", value: "difference" },
+        { label: "excl", value: "exclusion" },
+        { label: "hrd", value: "hard-light" },
+        { label: "sft", value: "soft-light" },
+        { label: "drk", value: "darken" },
+        { label: "lgt", value: "lighten" },
       ],
       speedPresets: [
         { label: "¼", value: 0.25 },
@@ -1158,6 +1253,7 @@ export default {
     this._presetLongPressTimer = null;
     this._presetLongPressIndex = null;
     this._autoCfRaf = null;
+    this._recordInterval = null;
     this._beatUnsubscribe = BeatSync.on("beat", () => this.onAutoTriggerBeat());
     this.lastKickState = Boolean(this.$modV?.store?.state?.beats?.kick);
     this.beatPollInterval = setInterval(this.pollBeatState, 1000 / 60);
@@ -1209,6 +1305,11 @@ export default {
     if (this._autoCfRaf) {
       cancelAnimationFrame(this._autoCfRaf);
       this._autoCfRaf = null;
+    }
+
+    if (this._recordInterval) {
+      clearInterval(this._recordInterval);
+      this._recordInterval = null;
     }
   },
 
@@ -1675,6 +1776,16 @@ export default {
       // Reset trail
       this.trailEnabled = false;
       deckMixer.setTrail(false);
+
+      // Reset strobe
+      this.strobeEnabled = false;
+      deckMixer.setStrobe(false);
+
+      // Reset master output FX
+      this.masterContrast = 1.0;
+      this.masterSaturation = 1.0;
+      this.masterHue = 0;
+      deckMixer.setMasterFx({ contrast: 1.0, saturation: 1.0, hue: 0 });
 
       // Stop LFO
       this.stopLfo();
@@ -2369,6 +2480,71 @@ export default {
     setTrailDecay(value) {
       this.trailDecay = parseFloat(value);
       deckMixer.setTrail(this.trailEnabled, this.trailDecay);
+    },
+
+    toggleStrobe() {
+      this.strobeEnabled = !this.strobeEnabled;
+      deckMixer.setStrobe(this.strobeEnabled, this.strobeHz);
+    },
+
+    setStrobeHz(value) {
+      this.strobeHz = parseFloat(value);
+      deckMixer.setStrobe(this.strobeEnabled, this.strobeHz);
+    },
+
+    setMasterFxParam(param, value) {
+      const v = parseFloat(value);
+      if (param === "contrast") {
+        this.masterContrast = v;
+      } else if (param === "saturation") {
+        this.masterSaturation = v;
+      } else if (param === "hue") {
+        this.masterHue = v;
+      }
+      deckMixer.setMasterFx({
+        contrast: this.masterContrast,
+        saturation: this.masterSaturation,
+        hue: this.masterHue,
+      });
+    },
+
+    resetMasterFxParam(param) {
+      if (param === "contrast") {
+        this.masterContrast = 1.0;
+      } else if (param === "saturation") {
+        this.masterSaturation = 1.0;
+      } else if (param === "hue") {
+        this.masterHue = 0;
+      }
+      deckMixer.setMasterFx({
+        contrast: this.masterContrast,
+        saturation: this.masterSaturation,
+        hue: this.masterHue,
+      });
+    },
+
+    toggleRecording() {
+      if (this.isRecording) {
+        deckMixer.stopRecording();
+        this.isRecording = false;
+        clearInterval(this._recordInterval);
+        this._recordInterval = null;
+        this.recordElapsed = 0;
+      } else {
+        deckMixer.startRecording();
+        this.isRecording = true;
+        this.recordElapsed = 0;
+        this._recordInterval = setInterval(() => {
+          this.recordElapsed = deckMixer.getRecordingElapsedMs();
+        }, 500);
+      }
+    },
+
+    formatRecordElapsed(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const ss = String(s % 60).padStart(2, "0");
+      return `${m}:${ss}`;
     },
 
     async toggleCam(deck) {
@@ -3484,6 +3660,126 @@ export default {
   flex: 1;
   height: 3px;
   accent-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Strobe */
+.strobe-hz-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.strobe-hz-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  min-width: 38px;
+  font-variant-numeric: tabular-nums;
+}
+
+.strobe-hz-slider {
+  flex: 1;
+  height: 3px;
+  accent-color: #ff9900;
+}
+
+.beat-strobe-toggle.sync-toggle-active {
+  background: rgba(255, 153, 0, 0.18);
+  border-color: #ff9900;
+  color: #ffb84d;
+}
+
+/* Master output FX */
+.master-fx-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.master-fx-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.06em;
+  padding-top: 2px;
+  min-width: 18px;
+}
+
+.master-fx-sliders {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.master-fx-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.master-fx-item-label {
+  font-size: 0.52rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 20px;
+  letter-spacing: 0.04em;
+}
+
+.master-fx-slider {
+  flex: 1;
+  height: 3px;
+  accent-color: #00d4aa;
+}
+
+/* REC button */
+.rec-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 60, 60, 0.3);
+  border-radius: 4px;
+  color: rgba(255, 80, 80, 0.7);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.rec-btn:hover {
+  border-color: rgba(255, 60, 60, 0.7);
+  color: #ff5050;
+}
+
+.rec-btn-active {
+  background: rgba(255, 30, 30, 0.12);
+  border-color: #ff3c3c;
+  color: #ff6060;
+  animation: rec-pulse 1s ease-in-out infinite;
+}
+
+@keyframes rec-pulse {
+  0%,
+  100% {
+    border-color: #ff3c3c;
+  }
+  50% {
+    border-color: rgba(255, 60, 60, 0.3);
+  }
+}
+
+.rec-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 /* Webcam button */
