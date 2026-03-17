@@ -110,6 +110,15 @@
         </button>
         <button
           type="button"
+          class="deck-freeze-btn"
+          :class="{ 'deck-freeze-active': frozenA }"
+          title="Freeze / hold current frame"
+          @click="toggleFreeze('A')"
+        >
+          ❄
+        </button>
+        <button
+          type="button"
           class="deck-fx-toggle"
           :class="{ 'deck-fx-open': showFxA }"
           title="Toggle color effects"
@@ -418,6 +427,15 @@
         </button>
         <button
           type="button"
+          class="deck-freeze-btn"
+          :class="{ 'deck-freeze-active': frozenB }"
+          title="Freeze / hold current frame"
+          @click="toggleFreeze('B')"
+        >
+          ❄
+        </button>
+        <button
+          type="button"
           class="deck-fx-toggle"
           :class="{ 'deck-fx-open': showFxB }"
           title="Toggle color effects"
@@ -615,6 +633,8 @@ export default {
       lfoInterval: null,
       opacityA: 1.0,
       opacityB: 1.0,
+      frozenA: false,
+      frozenB: false,
       autoTriggerA: false,
       autoTriggerB: false,
       autoTriggerDivision: 1,
@@ -659,6 +679,9 @@ export default {
       this.playbackProgressA = deckMixer.playerA.progress;
       this.playbackProgressB = deckMixer.playerB.progress;
       this.playbackProgress = deckMixer.progress;
+      // Keep frozen indicators in sync with actual player state
+      this.frozenA = deckMixer.playerA.isFrozen;
+      this.frozenB = deckMixer.playerB.isFrozen;
     }, 100);
     this.previewInterval = setInterval(this.drawOutputPreview, 1000 / 30);
     this.stopListeningForBeatSyncMode = clipLauncher.on(
@@ -1024,6 +1047,17 @@ export default {
       const player = deck === "A" ? deckMixer.playerA : deckMixer.playerB;
 
       return player.isPlaying;
+    },
+
+    toggleFreeze(deck) {
+      const player = deck === "A" ? deckMixer.playerA : deckMixer.playerB;
+      player.toggleFreeze();
+
+      if (deck === "A") {
+        this.frozenA = player.isFrozen;
+      } else {
+        this.frozenB = player.isFrozen;
+      }
     },
 
     stopDeck(deck) {
@@ -2146,6 +2180,42 @@ export default {
   border-color: var(--grackle-accent, #00ff88);
   color: var(--grackle-accent, #00ff88);
   background: rgba(0, 255, 136, 0.08);
+}
+
+/* Freeze button */
+.deck-freeze-btn {
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font-size: 0.62rem;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+  line-height: 1;
+}
+
+.deck-freeze-btn:hover {
+  border-color: rgba(120, 200, 255, 0.5);
+  color: rgba(140, 210, 255, 0.8);
+}
+
+.deck-freeze-active {
+  border-color: #7bcfff;
+  color: #7bcfff;
+  background: rgba(120, 200, 255, 0.12);
+  box-shadow: 0 0 12px rgba(100, 180, 255, 0.25);
+  animation: freeze-flicker 2s ease-in-out infinite;
+}
+
+@keyframes freeze-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.75;
+  }
 }
 
 /* Auto-trigger deck button */

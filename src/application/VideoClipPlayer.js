@@ -120,6 +120,30 @@ export class VideoClipPlayer {
     drawFrame();
   }
 
+  get isFrozen() {
+    return this._active && this._video !== null && this._video.paused;
+  }
+
+  freeze() {
+    if (this._video && !this._video.paused) {
+      this._video.pause();
+    }
+  }
+
+  unfreeze() {
+    if (this._video && this._video.paused && this._active) {
+      this._video.play().catch(() => {});
+    }
+  }
+
+  toggleFreeze() {
+    if (this.isFrozen) {
+      this.unfreeze();
+    } else {
+      this.freeze();
+    }
+  }
+
   /** Update playback rate on the running clip. */
   setSpeed(speed) {
     this.speed = Math.max(0.1, Math.min(16, Number(speed) || 1));
