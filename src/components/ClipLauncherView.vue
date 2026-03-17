@@ -555,6 +555,32 @@
         !! PANIC !!
       </button>
 
+      <!-- Scene presets: hold to save, tap to recall -->
+      <div class="scene-presets">
+        <span class="scene-presets-label">SCENE</span>
+        <button
+          v-for="(preset, i) in scenePresets"
+          :key="i"
+          type="button"
+          class="scene-preset-btn"
+          :class="{ 'scene-preset-saved': preset !== null }"
+          :title="
+            preset
+              ? `Recall scene ${i + 1} (hold to overwrite)`
+              : `Hold to save scene ${i + 1}`
+          "
+          @mousedown="startPresetLongPress(i)"
+          @mouseup="endPresetPress(i)"
+          @mouseleave="cancelPresetLongPress"
+          @touchstart.prevent="startPresetLongPress(i)"
+          @touchend.prevent="endPresetPress(i)"
+          @touchcancel="cancelPresetLongPress"
+        >
+          {{ i + 1 }}
+          <span v-if="preset !== null" class="scene-preset-dot"></span>
+        </button>
+      </div>
+
       <button
         class="sync-toggle lfo-toggle"
         :class="{ 'sync-toggle-active': lfoActive }"
@@ -928,6 +954,7 @@ export default {
       mirrorB: false,
       trailEnabled: false,
       trailDecay: 0.85,
+      scenePresets: [null, null, null, null],
       showFxA: false,
       showFxB: false,
       fxA: {
@@ -968,7 +995,24 @@ export default {
   },
 
   mounted() {
+    // Load persisted scene presets
+    try {
+      const raw = window.localStorage.getItem("grackle-scene-presets-v1");
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (Array.isArray(saved)) {
+          for (let i = 0; i < 4 && i < saved.length; i++) {
+            this.scenePresets[i] = saved[i];
+          }
+        }
+      }
+    } catch (_e) {
+      // ignore corrupt storage
+    }
+
     this._autoTriggerBeatCount = 0;
+    this._presetLongPressTimer = null;
+    this._presetLongPressIndex = null;
     this._beatUnsubscribe = BeatSync.on("beat", () => this.onAutoTriggerBeat());
     this.lastKickState = Boolean(this.$modV?.store?.state?.beats?.kick);
     this.beatPollInterval = setInterval(this.pollBeatState, 1000 / 60);
@@ -1013,6 +1057,7 @@ export default {
     document.removeEventListener("keydown", this.onKeyDown);
     this.stopStutter();
     this.cancelLongPress();
+    this.cancelPresetLongPress();
     this.cancelMidiLearnMode();
     this.stopLfo();
   },
@@ -1897,6 +1942,131 @@ export default {
           this.pendingMidiSlot = null;
         }
       }
+    },
+
+    _captureScene() {
+      return {
+        fxA: { ...this.fxA },
+        fxB: { ...this.fxB },
+        opacityA: this.opacityA,
+        opacityB: this.opacityB,
+        crossfader: this.crossfader,
+        blendMode: this.blendMode,
+        masterBrightness: this.masterBrightness,
+        beatFlashEnabled: this.beatFlashEnabled,
+        beatZoomEnabled: this.beatZoomEnabled,
+        trailEnabled: this.trailEnabled,
+        trailDecay: this.trailDecay,
+        mirrorA: this.mirrorA,
+        mirrorB: this.mirrorB,
+      };
+    },
+
+    _applyScene(scene) {
+      if (!scene) {
+        return;
+      }
+
+      if (scene.fxA) {
+        this.fxA = { ...scene.fxA };
+        deckMixer.setFx("A", scene.fxA);
+      }
+
+      if (scene.fxB) {
+        this.fxB = { ...scene.fxB };
+        deckMixer.setFx("B", scene.fxB);
+      }
+
+      if (scene.opacityA !== undefined) {
+        this.opacityA = scene.opacityA;
+        deckMixer.setOpacity("A", scene.opacityA);
+      }
+
+      if (scene.opacityB !== undefined) {
+        this.opacityB = scene.opacityB;
+        deckMixer.setOpacity("B", scene.opacityB);
+      }
+
+      if (scene.crossfader !== undefined) {
+        this.$store.commit("clip-launcher/SET_CROSSFADER", scene.crossfader);
+      }
+
+      if (scene.blendMode) {
+        this.blendMode = scene.blendMode;
+        deckMixer.setBlendMode(scene.blendMode);
+      }
+
+      if (scene.masterBrightness !== undefined) {
+        this.setMasterBrightness(scene.masterBrightness);
+      }
+
+      if (scene.beatFlashEnabled !== undefined) {
+        this.beatFlashEnabled = scene.beatFlashEnabled;
+        deckMixer.beatFlashEnabled = scene.beatFlashEnabled;
+      }
+
+      if (scene.beatZoomEnabled !== undefined) {
+        this.beatZoomEnabled = scene.beatZoomEnabled;
+        deckMixer.beatZoomEnabled = scene.beatZoomEnabled;
+      }
+
+      if (scene.trailEnabled !== undefined) {
+        this.trailEnabled = scene.trailEnabled;
+        this.trailDecay = scene.trailDecay || 0.85;
+        deckMixer.setTrail(scene.trailEnabled, scene.trailDecay);
+      }
+
+      if (scene.mirrorA !== undefined) {
+        this.mirrorA = scene.mirrorA;
+        deckMixer.setMirror("A", scene.mirrorA);
+      }
+
+      if (scene.mirrorB !== undefined) {
+        this.mirrorB = scene.mirrorB;
+        deckMixer.setMirror("B", scene.mirrorB);
+      }
+    },
+
+    _persistPresets() {
+      try {
+        window.localStorage.setItem(
+          "grackle-scene-presets-v1",
+          JSON.stringify(this.scenePresets)
+        );
+      } catch (_e) {
+        // storage quota
+      }
+    },
+
+    startPresetLongPress(index) {
+      this.cancelPresetLongPress();
+      this._presetLongPressIndex = index;
+      this._presetLongPressTimer = setTimeout(() => {
+        this._presetLongPressTimer = null;
+        const scene = this._captureScene();
+        this.$set(this.scenePresets, index, scene);
+        this._persistPresets();
+      }, 700);
+    },
+
+    endPresetPress(index) {
+      if (this._presetLongPressTimer) {
+        // Short tap — recall
+        clearTimeout(this._presetLongPressTimer);
+        this._presetLongPressTimer = null;
+        this._applyScene(this.scenePresets[index]);
+      }
+
+      this._presetLongPressIndex = null;
+    },
+
+    cancelPresetLongPress() {
+      if (this._presetLongPressTimer) {
+        clearTimeout(this._presetLongPressTimer);
+        this._presetLongPressTimer = null;
+      }
+
+      this._presetLongPressIndex = null;
     },
 
     toggleMirror(deck) {
@@ -2818,6 +2988,70 @@ export default {
   50% {
     box-shadow: 0 0 18px rgba(255, 200, 64, 0.4);
   }
+}
+
+/* Scene presets */
+.scene-presets {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.scene-presets-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  min-width: 36px;
+}
+
+.scene-preset-btn {
+  flex: 1;
+  position: relative;
+  padding: 5px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.scene-preset-btn:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.scene-preset-btn:active {
+  transform: scale(0.92);
+}
+
+.scene-preset-saved {
+  border-color: rgba(93, 255, 147, 0.4);
+  color: rgba(93, 255, 147, 0.8);
+  background: rgba(93, 255, 147, 0.06);
+}
+
+.scene-preset-saved:hover {
+  border-color: rgba(93, 255, 147, 0.7);
+  color: #5dff93;
+  box-shadow: 0 0 10px rgba(93, 255, 147, 0.15);
+}
+
+.scene-preset-dot {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #5dff93;
+  box-shadow: 0 0 4px rgba(93, 255, 147, 0.6);
 }
 
 /* Mirror button */
