@@ -4231,11 +4231,13 @@ export default {
 
 <style scoped>
 .clip-launcher {
+  container-type: inline-size;
+  container-name: launcher;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 200px) minmax(0, 1fr);
+  gap: 10px;
   height: 100%;
-  padding: 12px;
+  padding: 10px;
   box-sizing: border-box;
   position: relative;
 }
@@ -5877,14 +5879,137 @@ export default {
   box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
 }
 
-@media (max-width: 1100px) {
+/* ── Responsive: medium panel (< 1100px wide) ──────────── */
+@container launcher (max-width: 1100px) {
   .clip-launcher {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 72px auto;
+    gap: 6px;
+    padding: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(130px, 170px) minmax(0, 1fr);
+  }
+
+  .deck-grid {
+    gap: 4px;
+  }
+
+  .clip-slot {
+    padding: 2px;
+    border-radius: 4px;
+  }
+
+  .slot-index,
+  .slot-name,
+  .slot-meta {
+    font-size: 0.58rem;
+  }
+
+  .slot-empty-icon {
+    font-size: 0.9rem;
+  }
+
+  .deck-header {
+    gap: 3px;
+  }
+
+  .sync-toggle {
+    padding: 5px 7px;
+    font-size: 0.65rem;
+  }
+
+  .scene-preset-btn {
+    padding: 3px 1px;
+    font-size: 0.6rem;
+  }
+
+  .speed-preset-btn {
+    padding: 1px 3px;
+    font-size: 0.55rem;
+  }
+
+  .deck-title {
+    font-size: 0.7rem;
+  }
+}
+
+/* ── Responsive: compact panel (< 860px wide) ──────────── */
+@container launcher (max-width: 860px) {
+  .clip-launcher {
+    gap: 4px;
+    padding: 6px;
+    grid-template-columns: minmax(0, 1fr) minmax(110px, 140px) minmax(0, 1fr);
+  }
+
+  .deck-grid {
+    gap: 3px;
+  }
+
+  .clip-slot {
+    padding: 1px;
+    border-radius: 3px;
+  }
+
+  .slot-index,
+  .slot-name,
+  .slot-meta {
+    font-size: 0.52rem;
+  }
+
+  .slot-empty-icon {
+    font-size: 0.75rem;
+  }
+
+  /* Hide secondary controls to recover space */
+  .deck-fx-row,
+  .deck-grade-row,
+  .deck-transform-row,
+  .lfo-rate-row,
+  .lfo-controls-row {
+    display: none;
+  }
+
+  .sync-toggle {
+    padding: 4px 5px;
+    font-size: 0.6rem;
+    gap: 4px;
+  }
+
+  .scene-preset-btn {
+    padding: 2px 1px;
+    font-size: 0.55rem;
+  }
+
+  .speed-preset-btn {
+    padding: 1px 2px;
+    font-size: 0.52rem;
+  }
+
+  .deck-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
   }
 
   .crossfader-column {
+    gap: 6px;
+  }
+
+  .output-preview {
+    display: none;
+  }
+}
+
+/* ── Responsive: stacked (< 680px wide) ────────────────── */
+@container launcher (max-width: 680px) {
+  .clip-launcher {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 4px;
+    overflow-y: auto;
+  }
+
+  .crossfader-column {
+    flex-direction: row;
+    flex-wrap: wrap;
     justify-content: center;
+    gap: 6px;
   }
 
   .crossfader-labels {
@@ -5896,7 +6021,12 @@ export default {
     writing-mode: initial;
     -webkit-appearance: none;
     min-height: 0;
-    height: auto;
+    height: 32px;
+    width: 100%;
+  }
+
+  .scene-preset-grid {
+    grid-template-columns: repeat(16, 1fr);
   }
 }
 
