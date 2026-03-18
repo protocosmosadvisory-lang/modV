@@ -474,7 +474,7 @@
           @mouseleave="cancelLongPress"
           @touchstart.prevent="startLongPress('A', slot, $event)"
           @touchend.prevent="endLongPress('A', slot)"
-          @contextmenu.prevent="clearSlot('A', slot)"
+          @contextmenu.prevent="openSlotMenu('A', slot, $event)"
           @dragenter.prevent
           @dragover.prevent
           @drop.prevent="dropFile('A', slot, $event)"
@@ -1357,7 +1357,7 @@
           @mouseleave="cancelLongPress"
           @touchstart.prevent="startLongPress('B', slot, $event)"
           @touchend.prevent="endLongPress('B', slot)"
-          @contextmenu.prevent="clearSlot('B', slot)"
+          @contextmenu.prevent="openSlotMenu('B', slot, $event)"
           @dragenter.prevent
           @dragover.prevent
           @drop.prevent="dropFile('B', slot, $event)"
@@ -1381,6 +1381,120 @@
         </button>
       </div>
     </section>
+
+    <!-- Slot context menu -->
+    <div
+      v-if="slotMenu.visible"
+      class="slot-ctx-menu"
+      :style="{ top: slotMenu.y + 'px', left: slotMenu.x + 'px' }"
+      @mouseleave="slotMenu.visible = false"
+    >
+      <button class="ctx-item" @click="ctxLoadFile">Load File…</button>
+      <button class="ctx-item" @click="ctxLoadUrl">Load URL…</button>
+      <button class="ctx-item" @click="ctxOpenLibrary">Browse Library…</button>
+      <div class="ctx-divider" />
+      <button
+        class="ctx-item ctx-item-danger"
+        :disabled="!slotMenu.hasSource"
+        @click="ctxClear"
+      >
+        Clear Slot
+      </button>
+    </div>
+
+    <!-- URL input dialog -->
+    <transition name="wizard-fade">
+      <div
+        v-if="showUrlDialog"
+        class="wizard-overlay"
+        @click.self="showUrlDialog = false"
+      >
+        <div class="wizard-panel url-dialog-panel">
+          <div class="wizard-title">Load from URL</div>
+          <p class="url-dialog-hint">
+            Paste a direct <code>.mp4</code>, <code>.webm</code>, or
+            <code>.m3u8</code> (HLS) URL.
+          </p>
+          <input
+            ref="urlInput"
+            v-model="urlInputValue"
+            class="url-input-field"
+            type="text"
+            placeholder="https://example.com/clip.mp4"
+            @keydown.enter="confirmUrlLoad"
+            @keydown.esc="showUrlDialog = false"
+          />
+          <div class="url-dialog-footer">
+            <button
+              class="wizard-btn-ghost wizard-btn"
+              @click="showUrlDialog = false"
+            >
+              Cancel
+            </button>
+            <button
+              class="wizard-btn"
+              :disabled="!urlInputValue.trim()"
+              @click="confirmUrlLoad"
+            >
+              Load
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Footage Library -->
+    <transition name="wizard-fade">
+      <div
+        v-if="showLibrary"
+        class="wizard-overlay"
+        @click.self="showLibrary = false"
+      >
+        <div class="wizard-panel library-panel">
+          <div class="wizard-title">Footage Library</div>
+          <div class="library-tabs">
+            <button
+              v-for="cat in libraryCategories"
+              :key="cat.id"
+              class="lib-tab"
+              :class="{ 'lib-tab-active': libraryTab === cat.id }"
+              @click="libraryTab = cat.id"
+            >
+              {{ cat.label }}
+            </button>
+          </div>
+          <div class="library-list">
+            <div
+              v-for="item in currentLibraryItems"
+              :key="item.url"
+              class="library-item"
+            >
+              <div class="lib-item-info">
+                <div class="lib-item-name">{{ item.name }}</div>
+                <div class="lib-item-url">{{ item.url }}</div>
+              </div>
+              <button class="lib-load-btn" @click="loadLibraryItem(item)">
+                Load →
+              </button>
+            </div>
+          </div>
+          <div class="library-footer">
+            <span
+              >Click Load → to put into slot {{ libraryTargetDeck }}
+              {{
+                libraryTargetSlot ? slotAddress(libraryTargetSlot.id) : ""
+              }}</span
+            >
+            <button
+              class="wizard-btn-ghost wizard-btn"
+              @click="showLibrary = false"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
 
     <!-- First-launch Wizard Overlay -->
     <transition name="wizard-fade">
@@ -1745,6 +1859,112 @@ export default {
       showWizard: false,
       wizardStep: 0,
       templatesLoaded: false,
+      // context menu
+      slotMenu: {
+        visible: false,
+        x: 0,
+        y: 0,
+        deck: null,
+        slot: null,
+        hasSource: false,
+      },
+      // URL dialog
+      showUrlDialog: false,
+      urlInputValue: "",
+      urlTargetDeck: null,
+      urlTargetSlot: null,
+      // library
+      showLibrary: false,
+      libraryTab: "abstract",
+      libraryTargetDeck: null,
+      libraryTargetSlot: null,
+      libraryCategories: [
+        { id: "abstract", label: "Abstract" },
+        { id: "nature", label: "Nature" },
+        { id: "space", label: "Space" },
+        { id: "samples", label: "Sample Clips" },
+        { id: "livecams", label: "Live Cams (HLS)" },
+      ],
+      libraryItems: {
+        abstract: [
+          {
+            name: "Lava Lamp – Purple",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+          },
+          {
+            name: "Fluid Ink – Dark",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+          },
+          {
+            name: "Big Buck Bunny (test loop)",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          },
+          {
+            name: "Elephant Dream (CC)",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+          },
+        ],
+        nature: [
+          {
+            name: "Ocean Waves – Slow",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+          },
+          {
+            name: "Forest – Aerial",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4",
+          },
+          {
+            name: "Waterfall – Timelapse",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
+          },
+        ],
+        space: [
+          {
+            name: "Earth from ISS (NASA, CC)",
+            url: "https://images-assets.nasa.gov/video/NHQ_2019_0311_Go Forward to the Moon/NHQ_2019_0311_Go Forward to the Moon~orig.mp4",
+          },
+          {
+            name: "Subaru – Wide Field Stars",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+          },
+        ],
+        samples: [
+          {
+            name: "Tears of Steel (CC, Blender)",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+          },
+          {
+            name: "Sintel (CC, Blender)",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+          },
+          {
+            name: "For Bigger Blazes",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+          },
+          {
+            name: "For Bigger Fun",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+          },
+          {
+            name: "For Bigger Joyrides",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+          },
+          {
+            name: "For Bigger Meltdowns",
+            url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+          },
+        ],
+        livecams: [
+          {
+            name: "NASA TV Public (HLS)",
+            url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-Public/master.m3u8",
+          },
+          {
+            name: "Relaxing – White Noise Stream (HLS)",
+            url: "https://streams.radioboss.fm:8443/relaxinghls/stream.m3u8",
+          },
+        ],
+      },
       showFxA: false,
       showFxB: false,
       fxA: {
@@ -1912,6 +2132,7 @@ export default {
       }
     );
     document.addEventListener("click", this.closePopover);
+    document.addEventListener("click", this._closeSlotMenu);
     document.addEventListener("keydown", this.onKeyDown);
   },
 
@@ -1934,6 +2155,7 @@ export default {
       this.stopListeningForBeatSyncMode = null;
     }
     document.removeEventListener("click", this.closePopover);
+    document.removeEventListener("click", this._closeSlotMenu);
     document.removeEventListener("keydown", this.onKeyDown);
     this.stopStutter();
     this.cancelLongPress();
@@ -1955,6 +2177,10 @@ export default {
   },
 
   computed: {
+    currentLibraryItems() {
+      return this.libraryItems[this.libraryTab] || [];
+    },
+
     decks() {
       return this.$store.state["clip-launcher"].decks;
     },
@@ -2234,6 +2460,74 @@ export default {
     clearSlot(deck, slot) {
       const { row, col } = parseSlotId(slot.id);
       clipLauncher.clearSlot(deck, row, col);
+    },
+
+    _closeSlotMenu() {
+      this.slotMenu.visible = false;
+    },
+
+    openSlotMenu(deck, slot, event) {
+      const margin = 8;
+      const menuW = 180;
+      const x = Math.min(event.clientX, window.innerWidth - menuW - margin);
+      this.slotMenu = {
+        visible: true,
+        x,
+        y: event.clientY + margin,
+        deck,
+        slot,
+        hasSource: Boolean(slot.source),
+      };
+    },
+
+    ctxLoadFile() {
+      const { deck, slot } = this.slotMenu;
+      this.slotMenu.visible = false;
+      this.openFilePicker(deck, slot);
+    },
+
+    ctxLoadUrl() {
+      const { deck, slot } = this.slotMenu;
+      this.slotMenu.visible = false;
+      this.urlTargetDeck = deck;
+      this.urlTargetSlot = slot;
+      this.urlInputValue = "";
+      this.showUrlDialog = true;
+      this.$nextTick(() => this.$refs.urlInput && this.$refs.urlInput.focus());
+    },
+
+    ctxOpenLibrary() {
+      const { deck, slot } = this.slotMenu;
+      this.slotMenu.visible = false;
+      this.libraryTargetDeck = deck;
+      this.libraryTargetSlot = slot;
+      this.showLibrary = true;
+    },
+
+    ctxClear() {
+      const { deck, slot } = this.slotMenu;
+      this.slotMenu.visible = false;
+      this.clearSlot(deck, slot);
+    },
+
+    confirmUrlLoad() {
+      const raw = this.urlInputValue.trim();
+      if (!raw) {
+        return;
+      }
+      const { row, col } = parseSlotId(this.urlTargetSlot.id);
+      const name = raw.split("/").pop().split("?")[0] || "stream";
+      clipLauncher.loadClip(this.urlTargetDeck, row, col, { url: raw, name });
+      this.showUrlDialog = false;
+    },
+
+    loadLibraryItem(item) {
+      const { row, col } = parseSlotId(this.libraryTargetSlot.id);
+      clipLauncher.loadClip(this.libraryTargetDeck, row, col, {
+        url: item.url,
+        name: item.name,
+      });
+      this.showLibrary = false;
     },
 
     setCrossfader(value) {
@@ -5891,5 +6185,172 @@ export default {
 .wizard-fade-enter,
 .wizard-fade-leave-to {
   opacity: 0;
+}
+
+/* ── Slot context menu ───────────────────────────────────── */
+.slot-ctx-menu {
+  position: fixed;
+  z-index: 10000;
+  background: #1a1d24;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 4px 0;
+  min-width: 160px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+}
+.ctx-item {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.78rem;
+  text-align: left;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 80ms ease;
+}
+.ctx-item:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+.ctx-item:disabled {
+  color: rgba(255, 255, 255, 0.25);
+  cursor: default;
+}
+.ctx-item-danger:not(:disabled) {
+  color: rgba(255, 100, 100, 0.8);
+}
+.ctx-item-danger:not(:disabled):hover {
+  background: rgba(255, 60, 60, 0.1);
+}
+.ctx-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 0;
+}
+
+/* ── URL dialog ──────────────────────────────────────────── */
+.url-dialog-panel {
+  max-width: 480px;
+  width: 100%;
+}
+.url-dialog-hint {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 12px;
+}
+.url-dialog-hint code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.76rem;
+}
+.url-input-field {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.82rem;
+  padding: 9px 12px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 120ms ease;
+}
+.url-input-field:focus {
+  border-color: rgba(93, 255, 147, 0.5);
+}
+.url-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* ── Footage library ─────────────────────────────────────── */
+.library-panel {
+  max-width: 560px;
+  width: 100%;
+}
+.library-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.lib-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 80ms ease;
+}
+.lib-tab:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.8);
+}
+.lib-tab-active {
+  border-color: rgba(93, 255, 147, 0.5);
+  color: rgba(93, 255, 147, 0.9);
+  background: rgba(93, 255, 147, 0.06);
+}
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+.library-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 7px;
+  padding: 8px 12px;
+}
+.lib-item-name {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+.lib-item-url {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+}
+.lib-load-btn {
+  flex-shrink: 0;
+  background: rgba(93, 255, 147, 0.1);
+  border: 1px solid rgba(93, 255, 147, 0.3);
+  color: rgba(93, 255, 147, 0.9);
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 80ms ease;
+}
+.lib-load-btn:hover {
+  background: rgba(93, 255, 147, 0.18);
+  border-color: rgba(93, 255, 147, 0.6);
+}
+.library-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.3);
 }
 </style>

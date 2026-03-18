@@ -9,6 +9,8 @@
  * so any remaining direct imports still work.
  */
 
+import Hls from "hls.js";
+
 const LOOP_MODES = ["loop", "ping-pong", "once", "hold"];
 
 export class VideoClipPlayer {
@@ -84,12 +86,30 @@ export class VideoClipPlayer {
     video.preload = "auto";
     video.loop = this.loopMode === "loop";
     video.playbackRate = this.speed;
-    video.src = url;
 
     await new Promise((resolve, reject) => {
-      video.addEventListener("canplay", resolve, { once: true });
-      video.addEventListener("error", reject, { once: true });
-      video.load();
+      if (
+        typeof url === "string" &&
+        (url.includes(".m3u8") || url.includes("m3u8")) &&
+        Hls.isSupported()
+      ) {
+        // HLS stream (live cams, etc.)
+        const hls = new Hls({ enableWorker: false });
+        this._hls = hls;
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, resolve);
+        hls.on(Hls.Events.ERROR, (_e, data) => {
+          if (data.fatal) {
+            reject(new Error(data.details));
+          }
+        });
+      } else {
+        video.src = url;
+        video.addEventListener("canplay", resolve, { once: true });
+        video.addEventListener("error", reject, { once: true });
+        video.load();
+      }
     });
 
     this._video = video;
@@ -281,6 +301,11 @@ export class VideoClipPlayer {
     if (this._raf) {
       cancelAnimationFrame(this._raf);
       this._raf = null;
+    }
+
+    if (this._hls) {
+      this._hls.destroy();
+      this._hls = null;
     }
 
     if (this._video) {
